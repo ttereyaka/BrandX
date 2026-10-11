@@ -10,6 +10,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_ID;
 const WEB_APP_URL = process.env.WEB_APP_URL || 'https://brandx-production-c65f.up.railway.app';
 
+// Настройка загрузки файлов
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = 'uploads/';
@@ -34,6 +35,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
+// Файл для хранения заказов
 const ORDERS_FILE = path.join(__dirname, 'orders.json');
 
 function loadOrders() {
@@ -47,11 +49,14 @@ function saveOrders(orders) {
   fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
 }
 
-app.post('/api/order', upload.single('attachment'), async (req, res) => {
+// Обработка заявки с фото товара и QR-кодом
+app.post('/api/order', upload.fields([{ name: 'productPhoto' }, { name: 'qrCode' }]), async (req, res) => {
   try {
     const order = JSON.parse(req.body.order);
-    const filePath = req.file ? req.file.path : null;
+    const productPhoto = req.files['productPhoto']?.[0]?.path;
+    const qrCode = req.files['qrCode']?.[0]?.path;
 
+    // Сохраняем заказ
     const orders = loadOrders();
     orders.push({
       ...order,
@@ -60,17 +65,29 @@ app.post('/api/order', upload.single('attachment'), async (req, res) => {
     });
     saveOrders(orders);
 
-    let message = `🛒 <b>Новый заказ #${order.orderId}</b>\n\n`;
+    // Формируем сообщение для админа
+    let message = `🛒 <b>НОВАЯ ЗАЯВКА #${order.orderId}</b>\n\n`;
     message += `📦 <b>Товар:</b> ${order.product}\n`;
     message += `📏 <b>Размер:</b> ${order.size}\n`;
-    message += `💰 <b>Сумма:</b> ${order.price.toLocaleString()} ₽\n`;
+    message += ` <b>ПВЗ:</b> ${order.pvz}\n`;
+    message += `🆔 <b>Трек-номер:</b> ${order.track || 'Не указан'}\n\n`;
     message += `👤 <b>Клиент:</b> @${order.username || 'неизвестно'}\n`;
-    message += ` <b>Имя:</b> ${order.firstName || '—'}\n`;
+    message += `📱 <b>Имя:</b> ${order.firstName || '—'}\n`;
     message += `🆔 <b>Telegram ID:</b> ${order.userId || '—'}`;
 
-    if (filePath) {
-      await bot.telegram.sendDocument(ADMIN_ID, {
-        source: filePath
+    // Отправляем фото товара (если есть)
+    if (productPhoto) {
+      await bot.telegram.sendPhoto(ADMIN_ID, {
+        source: productPhoto
+      }, {
+        caption: ` Фото товара для заявки #${order.orderId}`
+      });
+    }
+
+    // Отправляем QR-код с основным сообщением
+    if (qrCode) {
+      await bot.telegram.sendPhoto(ADMIN_ID, {
+        source: qrCode
       }, {
         caption: message,
         parse_mode: 'HTML'
@@ -83,28 +100,29 @@ app.post('/api/order', upload.single('attachment'), async (req, res) => {
 
     res.json({ success: true, orderId: order.orderId });
   } catch (error) {
-    console.error('Ошибка обработки заказа:', error);
+    console.error('Ошибка обработки заявки:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
+// Команда /orders - показать заказы клиента
 bot.command('orders', async (ctx) => {
   const userId = ctx.from.id;
   const orders = loadOrders();
   const userOrders = orders.filter(o => o.userId === userId);
 
   if (userOrders.length === 0) {
-    await ctx.reply('У вас пока нет заказов.\n\nНажмите кнопку "Магазин" чтобы сделать первый заказ! ', {
+    await ctx.reply('У вас пока нет заказов.\n\nНажмите кнопку "Магазин" чтобы сделать первый заказ! 🛍', {
       reply_markup: {
         inline_keyboard: [[
-          { text: ' Открыть магазин', web_app: { url: WEB_APP_URL } }
+          { text: '🛍 Открыть магазин', web_app: { url: WEB_APP_URL } }
         ]]
       }
     });
     return;
   }
 
-  let message = `📦 <b>Ваши заказы (${userOrders.length})</b>\n\n`;
+  let message = ` <b>Ваши заказы (${userOrders.length})</b>\n\n`;
   
   userOrders.slice(-5).reverse().forEach(order => {
     const date = new Date(order.date).toLocaleDateString('ru-RU', {
@@ -120,15 +138,17 @@ bot.command('orders', async (ctx) => {
     
     message += `${statusEmoji} <b>Заказ #${order.orderId}</b>\n`;
     message += `📅 ${date}\n`;
-    message += ` ${order.product}\n`;
+    message += `📦 ${order.product}\n`;
     message += `📏 Размер: ${order.size}\n`;
-    message += `💰 ${order.price.toLocaleString()} ₽\n`;
+    message += `📍 ПВЗ: ${order.pvz || '—'}\n`;
+    message += ` ${order.price ? order.price.toLocaleString() + ' ₽' : 'Цена уточняется'}\n`;
     message += `📊 Статус: ${statusText}\n\n`;
   });
 
   await ctx.reply(message, { parse_mode: 'HTML' });
 });
 
+// Команда /support
 bot.command('support', (ctx) => {
   ctx.reply(
     '💬 <b>Связь с менеджером</b>\n\n' +
@@ -139,6 +159,7 @@ bot.command('support', (ctx) => {
   );
 });
 
+// Команда /returns
 bot.command('returns', (ctx) => {
   ctx.reply(
     '↩️ <b>Возвраты и обмен</b>\n\n' +
@@ -152,6 +173,7 @@ bot.command('returns', (ctx) => {
   );
 });
 
+// Команда /shop
 bot.command('shop', (ctx) => {
   ctx.reply(
     'Открываю магазин...',
@@ -165,6 +187,7 @@ bot.command('shop', (ctx) => {
   );
 });
 
+// Команда /start
 bot.start((ctx) => {
   ctx.reply(
     'Добро пожаловать в <b>BRAND X</b>! 🛍\n\n' +
@@ -182,6 +205,7 @@ bot.start((ctx) => {
   );
 });
 
+// Обработка callback кнопок
 bot.on('callback_query', async (ctx) => {
   const data = ctx.callbackQuery.data;
   
@@ -196,17 +220,18 @@ bot.on('callback_query', async (ctx) => {
       let message = `📦 <b>Ваши заказы (${userOrders.length})</b>\n\n`;
       userOrders.slice(-5).reverse().forEach(order => {
         const date = new Date(order.date).toLocaleDateString('ru-RU');
-        message += `📦 #${order.orderId} — ${order.product} (${order.size}) — ${order.price} ₽ — ${date}\n`;
+        message += `📦 #${order.orderId} — ${order.product} (${order.size}) — ${order.pvz || '—'} — ${date}\n`;
       });
       await ctx.reply(message, { parse_mode: 'HTML' });
     }
   } else if (data === 'support') {
-    await ctx.reply('💬 Напишите менеджеру: @managerbrandx');
+    await ctx.reply('💬 Напишите менеджеру: @ttereuyaka');
   }
   
   await ctx.answerCbQuery();
 });
 
+// Запуск бота
 bot.launch();
 console.log('✅ Telegram бот запущен');
 
