@@ -22,7 +22,7 @@ const SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 const SHEET_NAME = 'Лист10';
 
 
-brandx-production-c65f.up.railway.app;
+const SERVER_URL = 'https://brandx-production-c65f.up.railway.app';
 
 async function loadData() {
   try {
