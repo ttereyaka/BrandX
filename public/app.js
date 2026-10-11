@@ -14,14 +14,14 @@ let categories = [
 
 let currentProduct = null;
 let selectedSize = null;
-let uploadedFile = null;
+let uploadedFiles = {
+  product: null,
+  qr: null
+};
 let activeCategory = 'all';
 
-// ID твоей таблицы и имя листа
 const SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 const SHEET_NAME = 'Лист10';
-
-
 const SERVER_URL = 'https://brandx-production-c65f.up.railway.app';
 
 async function loadData() {
@@ -191,13 +191,14 @@ function selectSize(el) {
 }
 
 function goToPayment() {
-  document.getElementById('pay-name').textContent = currentProduct.name;
-  document.getElementById('pay-size').textContent = selectedSize;
-  document.getElementById('pay-total').textContent = currentProduct.price.toLocaleString() + ' ₽';
-  showScreen('payment1');
+  // Заполняем форму данными товара
+  document.getElementById('form-product').value = currentProduct.name;
+  document.getElementById('form-size').value = selectedSize;
+  
+  showScreen('payment2');
 }
 
-function handleFile(input) {
+function handleFile(input, type) {
   const file = input.files[0];
   if (!file) return;
 
@@ -206,47 +207,63 @@ function handleFile(input) {
     return;
   }
 
-  uploadedFile = file;
-  document.getElementById('file-name-display').textContent = file.name;
-  document.getElementById('btn-finish').disabled = false;
+  uploadedFiles[type] = file;
+
+  const previewId = `preview-${type}`;
+  const previewImgId = `preview-img-${type}`;
+  
+  document.getElementById(previewId).style.display = 'block';
 
   if (file.type.startsWith('image/')) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      document.getElementById('preview-img').src = e.target.result;
-      document.getElementById('file-preview').style.display = 'block';
+      document.getElementById(previewImgId).src = e.target.result;
     };
     reader.readAsDataURL(file);
+  }
+
+  checkFormValid();
+}
+
+function checkFormValid() {
+  const product = document.getElementById('form-product').value.trim();
+  const pvz = document.getElementById('form-pvz').value.trim();
+  const size = document.getElementById('form-size').value.trim();
+  
+  const btn = document.getElementById('btn-finish');
+  
+  if (product && pvz && size && uploadedFiles.product && uploadedFiles.qr) {
+    btn.disabled = false;
   } else {
-    document.getElementById('file-preview').style.display = 'block';
-    document.getElementById('preview-img').style.display = 'none';
+    btn.disabled = true;
   }
 }
 
-const uploadZone = document.getElementById('upload-zone');
-if (uploadZone) {
-  uploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadZone.classList.add('dragover');
-  });
-  uploadZone.addEventListener('dragleave', () => {
-    uploadZone.classList.remove('dragover');
-  });
-  uploadZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const input = document.getElementById('file-input');
-      input.files = e.dataTransfer.files;
-      handleFile(input);
+document.addEventListener('DOMContentLoaded', () => {
+  const fields = ['form-product', 'form-pvz', 'form-size', 'form-track'];
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', checkFormValid);
     }
   });
-}
+});
 
-//  ОТПРАВКА ЗАКАЗА НА СЕРВЕР
-async function finishOrder() {
-  if (!uploadedFile) return;
+async function submitApplication() {
+  const product = document.getElementById('form-product').value.trim();
+  const pvz = document.getElementById('form-pvz').value.trim();
+  const size = document.getElementById('form-size').value.trim();
+  const track = document.getElementById('form-track').value.trim();
+
+  if (!product || !pvz || !size) {
+    alert('Пожалуйста, заполните все обязательные поля');
+    return;
+  }
+
+  if (!uploadedFiles.product || !uploadedFiles.qr) {
+    alert('Пожалуйста, загрузите фото товара и QR-код');
+    return;
+  }
 
   const btn = document.getElementById('btn-finish');
   btn.disabled = true;
@@ -256,9 +273,11 @@ async function finishOrder() {
 
   const orderData = {
     orderId,
-    product: currentProduct.name,
-    size: selectedSize,
-    price: currentProduct.price,
+    product,
+    pvz,
+    size,
+    track: track || 'Не указан',
+    price: currentProduct ? currentProduct.price : 0,
     userId: tg.initDataUnsafe?.user?.id,
     username: tg.initDataUnsafe?.user?.username,
     firstName: tg.initDataUnsafe?.user?.first_name
@@ -267,7 +286,8 @@ async function finishOrder() {
   try {
     const formData = new FormData();
     formData.append('order', JSON.stringify(orderData));
-    formData.append('attachment', uploadedFile);
+    formData.append('productPhoto', uploadedFiles.product);
+    formData.append('qrCode', uploadedFiles.qr);
 
     const response = await fetch(`${SERVER_URL}/api/order`, {
       method: 'POST',
@@ -276,15 +296,19 @@ async function finishOrder() {
 
     if (!response.ok) throw new Error('Ошибка сервера');
 
+    document.getElementById('success-order-id').textContent = 'ЗАЯВКА #' + orderId;
+    document.getElementById('success-product').textContent = product;
+    document.getElementById('success-size').textContent = size;
+    document.getElementById('success-pvz').textContent = pvz;
+
   } catch (err) {
     console.error('Ошибка отправки:', err);
     alert('Произошла ошибка. Попробуйте ещё раз.');
     btn.disabled = false;
-    btn.innerHTML = '<span>ЗАВЕРШИТЬ ЗАКАЗ</span><span class="btn-arrow">→</span>';
+    btn.innerHTML = '<span>ОТПРАВИТЬ ЗАЯВКУ</span><span class="btn-arrow">→</span>';
     return;
   }
 
-  document.getElementById('success-order-id').textContent = 'ORDER #' + orderId;
   showScreen('success');
 }
 
@@ -294,7 +318,7 @@ if (!window.Telegram) {
     WebApp: {
       expand: () => console.log('Telegram: expand()'),
       sendData: (data) => {
-        console.log('📤 sendData:', data);
+        console.log(' sendData:', data);
         alert('Данные отправлены боту:\n' + data);
       },
       initDataUnsafe: {
