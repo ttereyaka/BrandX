@@ -201,7 +201,7 @@ bot.on('callback_query', async (ctx) => {
       await ctx.reply(message, { parse_mode: 'HTML' });
     }
   } else if (data === 'support') {
-    await ctx.reply('💬 Напишите менеджеру: @ttereuyaka');
+    await ctx.reply('💬 Напишите менеджеру: @managerbrandx');
   }
   
   await ctx.answerCbQuery();
