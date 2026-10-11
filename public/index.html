@@ -287,15 +287,31 @@
     </button>
   </div>
 
-  <!-- ========== УСПЕХ ========== -->
+    <!-- ========== УСПЕХ ========== -->
   <div id="screen-success" class="screen">
     <div class="success-wrap">
       <div class="success-logo">
         <span class="logo-letter-big">X</span>
       </div>
       <div class="success-check">✓</div>
-      <h1 class="success-title">ЗАКАЗ ПРИНЯТ!</h1>
-      <p class="success-text">Проверим оплату и напишем тебе в течение 30 минут в ЛС.</p>
+      <h1 class="success-title">ЗАЯВКА ОТПРАВЛЕНА!</h1>
+      
+      <div class="success-order-details">
+        <div class="detail-row">
+          <span class="detail-label">Товар</span>
+          <span class="detail-value" id="success-product"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Размер</span>
+          <span class="detail-value" id="success-size"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">ПВЗ</span>
+          <span class="detail-value" id="success-pvz"></span>
+        </div>
+      </div>
+      
+      <p class="success-text">Менеджер свяжется с вами в течение 30 минут для уточнения оплаты.</p>
       <div class="success-order-id" id="success-order-id"></div>
       <button class="btn-primary" onclick="showScreen('home')">
         <span>ВЕРНУТЬСЯ В КАТАЛОГ</span>
