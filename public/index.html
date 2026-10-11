@@ -123,78 +123,105 @@
     </div>
   </div>
 
-  <!-- ========== ОПЛАТА ШАГ 1 ========== -->
-  <div id="screen-payment1" class="screen">
+   <!-- ========== ФОРМА ЗАЯВКИ ========== -->
+  <div id="screen-payment2" class="screen">
     <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('product')">
+      <button class="back-btn-icon" onclick="showScreen('payment1')">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
       <div class="step-info">
-        <div class="step-label">STEP 01 / 02</div>
-        <div class="step-title">Твой заказ</div>
+        <div class="step-label">ЗАЯВКА</div>
+        <div class="step-title">Заполните данные</div>
       </div>
       <div class="logo-x-small">
         <span class="logo-letter-small">X</span>
       </div>
     </div>
 
-    <div class="order-summary">
-      <div class="summary-header">
-        <div class="summary-icon"></div>
-        <div>
-          <div class="summary-title">Детали заказа</div>
-          <div class="summary-sub">Проверь перед оплатой</div>
-        </div>
+    <div class="form-block">
+      <div class="form-header">
+        <h3>Данные заказа</h3>
+        <span class="required-badge">Обязательно</span>
       </div>
-      <div class="summary-divider"></div>
-      <div class="summary-row">
-        <span class="summary-label">Товар</span>
-        <strong class="summary-value" id="pay-name"></strong>
+      
+      <div class="form-group">
+        <label class="form-label">Товар</label>
+        <input type="text" id="form-product" placeholder="Например: Футболка ERD" class="form-input">
       </div>
-      <div class="summary-row">
-        <span class="summary-label">Размер</span>
-        <strong class="summary-value" id="pay-size"></strong>
+
+      <div class="form-group">
+        <label class="form-label">ПВЗ доставки</label>
+        <input type="text" id="form-pvz" placeholder="Например: Яндекс, Почта России, СДЭК" class="form-input">
       </div>
-      <div class="summary-row">
-        <span class="summary-label">Количество</span>
-        <strong class="summary-value">1 шт.</strong>
+
+      <div class="form-group">
+        <label class="form-label">Размер</label>
+        <input type="text" id="form-size" placeholder="Например: M, L, XL" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Трек-номер (если есть)</label>
+        <input type="text" id="form-track" placeholder="Оставьте пустым, если ещё нет" class="form-input">
       </div>
     </div>
 
-    <div class="total-block">
-      <div class="total-top">
-        <span class="total-label">ИТОГО К ОПЛАТЕ</span>
-        <span class="total-currency">RUB</span>
+    <div class="upload-block">
+      <div class="upload-header">
+        <h3>Фото товара</h3>
+        <span class="required-badge">Обязательно</span>
       </div>
-      <div class="total-amount" id="pay-total"></div>
-      <div class="total-bar"></div>
-    </div>
-
-    <div class="method-block">
-      <h3 class="method-title">Способ оплаты</h3>
-      <div class="method-option active">
-        <div class="method-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2">
-            <rect x="2" y="5" width="20" height="14" rx="2"/>
-            <line x1="2" y1="10" x2="22" y2="10"/>
+      <label class="upload-zone" id="upload-zone-product">
+        <input type="file" id="file-product" accept="image/*" onchange="handleFile(this, 'product')">
+        <div class="upload-icon-wrap">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
           </svg>
         </div>
-        <div>
-          <div class="method-name">Перевод на карту</div>
-          <div class="method-sub">Сбербанк / Тинькофф / СБП</div>
-        </div>
-        <div class="method-check">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </div>
+        <div class="upload-text">Загрузить фото товара</div>
+        <div class="upload-formats">JPG, PNG до 10 МБ</div>
+      </label>
+      <div id="preview-product" style="display:none">
+        <img id="preview-img-product" class="preview-img">
       </div>
     </div>
 
-    <button class="btn-primary" onclick="showScreen('payment2')">
-      <span>ДАЛЕЕ</span>
+    <div class="upload-block">
+      <div class="upload-header">
+        <h3>QR-код для отправки</h3>
+        <span class="required-badge">Обязательно</span>
+      </div>
+      <label class="upload-zone" id="upload-zone-qr">
+        <input type="file" id="file-qr" accept="image/*" onchange="handleFile(this, 'qr')">
+        <div class="upload-icon-wrap">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+            <rect x="14" y="14" width="3" height="3"/>
+            <rect x="18" y="14" width="3" height="3"/>
+            <rect x="14" y="18" width="3" height="3"/>
+            <rect x="18" y="18" width="3" height="3"/>
+          </svg>
+        </div>
+        <div class="upload-text">Загрузить QR-код</div>
+        <div class="upload-formats">JPG, PNG до 10 МБ</div>
+      </label>
+      <div id="preview-qr" style="display:none">
+        <img id="preview-img-qr" class="preview-img">
+      </div>
+    </div>
+
+    <div class="info-note">
+      <span class="info-icon">️</span>
+      <span>После отправки заявки менеджер свяжется с вами для уточнения оплаты</span>
+    </div>
+
+    <button class="btn-primary" id="btn-finish" onclick="submitApplication()" disabled>
+      <span>ОТПРАВИТЬ ЗАЯВКУ</span>
       <span class="btn-arrow">→</span>
     </button>
   </div>
