@@ -26,7 +26,29 @@ const upload = multer({ storage });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
+
+// Файл для хранения заказов
+const ORDERS_FILE = path.join(__dirname, 'orders.json');
+
+// Загрузка заказов из файла
+function loadOrders() {
+  if (fs.existsSync(ORDERS_FILE)) {
+    return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8'));
+  }
+  return [];
+}
+
+// Сохранение заказов в файл
+function saveOrders(orders) {
+  fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+}
 
 // Обработка заказа
 app.post('/api/order', upload.single('attachment'), async (req, res) => {
@@ -34,12 +56,22 @@ app.post('/api/order', upload.single('attachment'), async (req, res) => {
     const order = JSON.parse(req.body.order);
     const filePath = req.file ? req.file.path : null;
 
-    let message = `🛒 <b>Новый заказ #${order.orderId}</b>\n\n`;
+    // Сохраняем заказ в файл
+    const orders = loadOrders();
+    orders.push({
+      ...order,
+      date: new Date().toISOString(),
+      status: 'pending'
+    });
+    saveOrders(orders);
+
+    // Отправляем админу
+    let message = ` <b>Новый заказ #${order.orderId}</b>\n\n`;
     message += `📦 <b>Товар:</b> ${order.product}\n`;
-    message += `📏 <b>Размер:</b> ${order.size}\n`;
+    message += ` <b>Размер:</b> ${order.size}\n`;
     message += `💰 <b>Сумма:</b> ${order.price.toLocaleString()} ₽\n`;
-    message += `👤 <b>Клиент:</b> @${order.username || 'неизвестно'}\n`;
-    message += ` <b>Имя:</b> ${order.firstName || '—'}\n`;
+    message += ` <b>Клиент:</b> @${order.username || 'неизвестно'}\n`;
+    message += `📱 <b>Имя:</b> ${order.firstName || '—'}\n`;
     message += `🆔 <b>Telegram ID:</b> ${order.userId || '—'}`;
 
     if (filePath) {
@@ -62,12 +94,92 @@ app.post('/api/order', upload.single('attachment'), async (req, res) => {
   }
 });
 
-// Запуск бота
-bot.launch();
-console.log('✅ Telegram бот запущен');
+//  Команда /orders - показать заказы клиента
+bot.command('orders', async (ctx) => {
+  const userId = ctx.from.id;
+  const username = ctx.from.username;
+  
+  const orders = loadOrders();
+  const userOrders = orders.filter(o => o.userId === userId);
 
-// Запуск сервера
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Сервер запущен на порту ${PORT}`);
+  if (userOrders.length === 0) {
+    await ctx.reply('У вас пока нет заказов.\n\nНажмите кнопку "Магазин" чтобы сделать первый заказ! ', {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🛍 Открыть магазин', web_app: { url: process.env.WEB_APP_URL || 'https://brandx-production-c65f.up.railway.app' } }
+        ]]
+      }
+    });
+    return;
+  }
+
+  let message = `📦 <b>Ваши заказы (${userOrders.length})</b>\n\n`;
+  
+  userOrders.slice(-5).reverse().forEach(order => {
+    const date = new Date(order.date).toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    const statusEmoji = order.status === 'pending' ? '⏳' : order.status === 'completed' ? '✅' : '❌';
+    const statusText = order.status === 'pending' ? 'В обработке' : order.status === 'completed' ? 'Выполнен' : 'Отменён';
+    
+    message += `${statusEmoji} <b>Заказ #${order.orderId}</b>\n`;
+    message += `📅 ${date}\n`;
+    message += `📦 ${order.product}\n`;
+    message += `📏 Размер: ${order.size}\n`;
+    message += `💰 ${order.price.toLocaleString()} ₽\n`;
+    message += `📊 Статус: ${statusText}\n\n`;
+  });
+
+  await ctx.reply(message, { parse_mode: 'HTML' });
 });
+
+// 💬 Команда /support - связь с менеджером
+bot.command('support', (ctx) => {
+  ctx.reply(
+    '💬 <b>Связь с менеджером</b>\n\n' +
+    'Для связи с менеджером напишите нам:\n' +
+    '@ttereuyaka\n\n' +
+    'Мы ответим в течение 30 минут в рабочее время (10:00 - 22:00 МСК)',
+    { parse_mode: 'HTML' }
+  );
+});
+
+// ️ Команда /returns - возвраты
+bot.command('returns', (ctx) => {
+  ctx.reply(
+    '↩️ <b>Возвраты и обмен</b>\n\n' +
+    'Условия возврата:\n' +
+    '• Возврат в течение 14 дней\n' +
+    '• Товар должен быть в оригинальном состоянии\n' +
+    '• Сохранены бирки и упаковка\n\n' +
+    'Для оформления возврата напишите менеджеру:\n' +
+    '@ttereuyaka',
+    { parse_mode: 'HTML' }
+  );
+});
+
+// 🛍 Команда /shop - открыть магазин
+bot.command('shop', (ctx) => {
+  ctx.reply(
+    'Открываю магазин...',
+    {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🛍 Открыть магазин', web_app: { url: process.env.WEB_APP_URL || 'https://brandx-production-c65f.up.railway.app' } }
+        ]]
+      }
+    }
+  );
+});
+
+// /start команда
+bot.start((ctx) => {
+  ctx.reply(
+    'Добро пожаловать в <b>BRAND X</b>! 🛍\n\n' +
+    'Мы продаём эксклюзивную streetwear одежду.\n\n' +
+    'Используйте кнопки ниже для навигации:',
