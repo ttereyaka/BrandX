@@ -21,8 +21,8 @@ let activeCategory = 'all';
 const SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 const SHEET_NAME = 'Лист10';
 
-// ⚠️ ЗАМЕНИ НА СВОЮ ССЫЛКУ ОТ RAILWAY (после развёртывания сервера)
-const SERVER_URL = 'https://ТВОЯ_ССЫЛКА.railway.app';
+
+brandx-production-c65f.up.railway.app;
 
 async function loadData() {
   try {
