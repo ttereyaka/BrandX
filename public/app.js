@@ -4,13 +4,13 @@ tg.expand();
 let products = [];
 let categories = [
   { id: 'all', name: 'Все' },
-  { id: 'jackets', name: 'Верхняя одежда' },
+  { id: 'jackets', name: 'Куртки и пуховики' },
   { id: 'hoodies', name: 'Худи и свитшоты' },
-  { id: 'sviter', name: 'Свитера' },
+  { id: 'sviter', name: 'Свитера и кардиганы' },
   { id: 'tshirts', name: 'Футболки' },
   { id: 'shirts', name: 'Рубашки' },
   { id: 'shorts', name: 'Шорты и брюки' },
-  { id: 'accessories', name: 'Аксессуары' }
+  { id: 'accessories', name: 'Сумки' }
 ];
 
 let currentProduct = null;
