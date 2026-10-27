@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>BRAND X</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -117,13 +117,89 @@
       <div class="stock-bar" id="p-stock"></div>
 
       <button class="btn-primary" id="btn-buy" onclick="goToPayment()" disabled>
-        <span>ОФОРМИТЬ ЗАКАЗ</span>
+        <span>ОФОРМИТЬ ЗАЯВКУ</span>
         <span class="btn-arrow">→</span>
       </button>
     </div>
   </div>
 
-   <!-- ========== ФОРМА ЗАЯВКИ ========== -->
+  <!-- ========== ОПЛАТА ШАГ 1 ========== -->
+  <div id="screen-payment1" class="screen">
+    <div class="payment-top-bar">
+      <button class="back-btn-icon" onclick="showScreen('product')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="step-info">
+        <div class="step-label">STEP 01 / 02</div>
+        <div class="step-title">Твой заказ</div>
+      </div>
+      <div class="logo-x-small">
+        <span class="logo-letter-small">X</span>
+      </div>
+    </div>
+
+    <div class="order-summary">
+      <div class="summary-header">
+        <div class="summary-icon"></div>
+        <div>
+          <div class="summary-title">Детали заказа</div>
+          <div class="summary-sub">Проверь перед оформлением</div>
+        </div>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-row">
+        <span class="summary-label">Товар</span>
+        <strong class="summary-value" id="pay-name"></strong>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Размер</span>
+        <strong class="summary-value" id="pay-size"></strong>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Количество</span>
+        <strong class="summary-value">1 шт.</strong>
+      </div>
+    </div>
+
+    <div class="total-block">
+      <div class="total-top">
+        <span class="total-label">ИТОГО К ОПЛАТЕ</span>
+        <span class="total-currency">RUB</span>
+      </div>
+      <div class="total-amount" id="pay-total"></div>
+      <div class="total-bar"></div>
+    </div>
+
+    <div class="method-block">
+      <h3 class="method-title">Способ оплаты</h3>
+      <div class="method-option active">
+        <div class="method-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </div>
+        <div>
+          <div class="method-name">Перевод на карту</div>
+          <div class="method-sub">Сбербанк / Тинькофф / СБП</div>
+        </div>
+        <div class="method-check">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="showScreen('payment2')">
+      <span>ДАЛЕЕ</span>
+      <span class="btn-arrow">→</span>
+    </button>
+  </div>
+
+  <!-- ========== ФОРМА ЗАЯВКИ ========== -->
   <div id="screen-payment2" class="screen">
     <div class="payment-top-bar">
       <button class="back-btn-icon" onclick="showScreen('payment1')">
@@ -132,7 +208,7 @@
         </svg>
       </button>
       <div class="step-info">
-        <div class="step-label">ЗАЯВКА</div>
+        <div class="step-label">STEP 02 / 02</div>
         <div class="step-title">Заполните данные</div>
       </div>
       <div class="logo-x-small">
@@ -226,68 +302,7 @@
     </button>
   </div>
 
-  <!-- ========== ОПЛАТА ШАГ 2 ========== -->
-  <div id="screen-payment2" class="screen">
-    <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('payment1')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <div class="step-info">
-        <div class="step-label">STEP 02 / 02</div>
-        <div class="step-title">Подтверждение</div>
-      </div>
-      <div class="logo-x-small">
-        <span class="logo-letter-small">X</span>
-      </div>
-    </div>
-
-    <div class="requisites-block">
-      <div class="req-banner">
-        <h3>РЕКВИЗИТЫ У<br>МЕНЕДЖЕРА В ЛС</h3>
-        <p>Напиши нам для получения данных карты</p>
-      </div>
-      <div class="req-info-row">
-        <span class="req-label">Владелец карты</span>
-        <span class="req-value" id="req-owner">—</span>
-      </div>
-      <div class="req-note">
-        <span class="info-icon"></span>
-        <span>Реквизиты выдаются после подтверждения заказа</span>
-      </div>
-    </div>
-
-    <div class="upload-block">
-      <div class="upload-header">
-        <h3>Чек об оплате</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
-      <label class="upload-zone" id="upload-zone">
-        <input type="file" id="file-input" accept="image/*,.pdf" onchange="handleFile(this)">
-        <div class="upload-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-        </div>
-        <div class="upload-text">Загрузить чек</div>
-        <div class="upload-formats">JPG, PNG, WEBP или PDF до 10 МБ</div>
-      </label>
-      <div id="file-preview" style="display:none">
-        <img id="preview-img" class="preview-img">
-        <div class="file-name" id="file-name-display"></div>
-      </div>
-    </div>
-
-    <button class="btn-primary" id="btn-finish" onclick="finishOrder()" disabled>
-      <span>ЗАВЕРШИТЬ ЗАКАЗ</span>
-      <span class="btn-arrow">→</span>
-    </button>
-  </div>
-
-    <!-- ========== УСПЕХ ========== -->
+  <!-- ========== УСПЕХ ========== -->
   <div id="screen-success" class="screen">
     <div class="success-wrap">
       <div class="success-logo">
@@ -319,6 +334,98 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- ========== ВОЗВРАТ ========== -->
+  <div id="screen-returns" class="screen">
+    <div class="payment-top-bar">
+      <button class="back-btn-icon" onclick="showScreen('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="step-info">
+        <div class="step-label">ВОЗВРАТ</div>
+        <div class="step-title">Оформление возврата</div>
+      </div>
+      <div class="logo-x-small">
+        <span class="logo-letter-small">X</span>
+      </div>
+    </div>
+
+    <div class="form-block">
+      <div class="form-header">
+        <h3>Данные возврата</h3>
+        <span class="required-badge">Обязательно</span>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Номер заказа</label>
+        <input type="text" id="return-order-id" placeholder="Например: BX-123456" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Товар</label>
+        <input type="text" id="return-product" placeholder="Например: Футболка ERD белая" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Причина возврата</label>
+        <select id="return-reason" class="form-input">
+          <option value="">Выберите причину</option>
+          <option value="Не подошел размер">Не подошел размер</option>
+          <option value="Брак товара">Брак товара</option>
+          <option value="Не соответствует описанию">Не соответствует описанию</option>
+          <option value="Другое">Другое</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Адрес, куда прибыл товар</label>
+        <input type="text" id="return-address" placeholder="Город, улица, дом, квартира" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Телефон для связи</label>
+        <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
+      </div>
+    </div>
+
+    <div class="upload-block">
+      <div class="upload-header">
+        <h3>QR-код для возврата</h3>
+        <span class="required-badge">Обязательно</span>
+      </div>
+      <label class="upload-zone" id="upload-zone-return-qr">
+        <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this)">
+        <div class="upload-icon-wrap">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+            <rect x="14" y="14" width="3" height="3"/>
+            <rect x="18" y="14" width="3" height="3"/>
+            <rect x="14" y="18" width="3" height="3"/>
+            <rect x="18" y="18" width="3" height="3"/>
+          </svg>
+        </div>
+        <div class="upload-text">Загрузить QR-код возврата</div>
+        <div class="upload-formats">JPG, PNG до 10 МБ</div>
+      </label>
+      <div id="preview-return-qr" style="display:none">
+        <img id="preview-img-return-qr" class="preview-img">
+      </div>
+    </div>
+
+    <div class="info-note">
+      <span class="info-icon">ℹ️</span>
+      <span>После отправки заявки менеджер свяжется с вами для подтверждения возврата</span>
+    </div>
+
+    <button class="btn-primary" id="btn-return" onclick="submitReturn()" disabled>
+      <span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span>
+      <span class="btn-arrow">→</span>
+    </button>
+  </div>
+
+  <script src="/app.js"></script>
 </body>
 </html>
