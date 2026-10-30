@@ -343,28 +343,28 @@
         </svg>
       </button>
       <div class="step-info">
-        <div class="step-label">ВОЗВРАТ</div>
+        <div class="step-label" style="color: var(--accent-red)">ВОЗВРАТ</div>
         <div class="step-title">Оформление возврата</div>
       </div>
-      <div class="logo-x-small">
+      <div class="logo-x-small" style="background: var(--accent-red)">
         <span class="logo-letter-small">X</span>
       </div>
     </div>
 
-    <div class="form-block">
+    <div class="form-block" style="border-color: var(--accent-border)">
       <div class="form-header">
-        <h3>Данные возврата</h3>
+        <h3 style="color: var(--accent-red)">Данные возврата</h3>
         <span class="required-badge">Обязательно</span>
       </div>
       
       <div class="form-group">
         <label class="form-label">Номер заказа</label>
-        <input type="text" id="return-order-id" placeholder="Например: BX-123456" class="form-input">
+        <input type="text" id="return-order-id" placeholder="BX-123456" class="form-input">
       </div>
 
       <div class="form-group">
         <label class="form-label">Товар</label>
-        <input type="text" id="return-product" placeholder="Например: Футболка ERD белая" class="form-input">
+        <input type="text" id="return-product" placeholder="Футболка ERD белая" class="form-input">
       </div>
 
       <div class="form-group">
@@ -379,25 +379,25 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Адрес, куда прибыл товар</label>
+        <label class="form-label">Адрес возврата</label>
         <input type="text" id="return-address" placeholder="Город, улица, дом, квартира" class="form-input">
       </div>
 
       <div class="form-group">
-        <label class="form-label">Телефон для связи</label>
+        <label class="form-label">Телефон</label>
         <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
       </div>
     </div>
 
-    <div class="upload-block">
+    <div class="upload-block" style="border-color: var(--accent-border)">
       <div class="upload-header">
-        <h3>QR-код для возврата</h3>
+        <h3 style="color: var(--accent-red)">QR-код для возврата</h3>
         <span class="required-badge">Обязательно</span>
       </div>
       <label class="upload-zone" id="upload-zone-return-qr">
         <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this)">
-        <div class="upload-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
+        <div class="upload-icon-wrap" style="background: rgba(255, 77, 109, 0.1)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2.5">
             <rect x="3" y="3" width="7" height="7"/>
             <rect x="14" y="3" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/>
@@ -407,21 +407,21 @@
             <rect x="18" y="18" width="3" height="3"/>
           </svg>
         </div>
-        <div class="upload-text">Загрузить QR-код возврата</div>
+        <div class="upload-text">Загрузить QR-код</div>
         <div class="upload-formats">JPG, PNG до 10 МБ</div>
       </label>
       <div id="preview-return-qr" style="display:none">
-        <img id="preview-img-return-qr" class="preview-img">
+        <img id="preview-img-return-qr" class="preview-img" style="border-color: var(--accent-border)">
       </div>
     </div>
 
-    <div class="info-note">
-      <span class="info-icon">ℹ️</span>
-      <span>После отправки заявки менеджер свяжется с вами для подтверждения возврата</span>
+    <div class="info-note" style="background: rgba(255, 77, 109, 0.08); border-color: rgba(255, 77, 109, 0.2)">
+      <span class="info-icon" style="color: var(--accent-red)">ℹ️</span>
+      <span>После отправки менеджер свяжется с вами для подтверждения</span>
     </div>
 
-    <button class="btn-primary" id="btn-return" onclick="submitReturn()" disabled>
-      <span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span>
+    <button class="btn-primary" id="btn-return" onclick="submitReturn()" disabled style="background: linear-gradient(135deg, var(--accent-red) 0%, #ff2d55 100%); box-shadow: 0 4px 16px rgba(255, 77, 109, 0.3)">
+      <span>ОТПРАВИТЬ ЗАЯВКУ</span>
       <span class="btn-arrow">→</span>
     </button>
   </div>
