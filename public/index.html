@@ -68,6 +68,99 @@
       </div>
       <div class="product-grid" id="product-grid"></div>
     </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="showScreen('home')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        <span>Главная</span>
+      </button>
+      <button class="nav-btn" onclick="showScreen('profile')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+        <span>Профиль</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ========== ПРОФИЛЬ ========== -->
+  <div id="screen-profile" class="screen">
+    <div class="profile-header">
+      <div class="profile-avatar">
+        <img id="profile-photo" src="https://via.placeholder.com/100" alt="Avatar">
+      </div>
+      <div class="profile-info">
+        <h2 id="profile-name">Пользователь</h2>
+        <div class="profile-status">
+          <span class="status-dot"></span>
+          <span id="profile-status-text">Активен</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-stats">
+      <div class="stat-card">
+        <div class="stat-label">Баланс</div>
+        <div class="balance-circle">
+          <svg viewBox="0 0 100 100">
+            <circle class="bg" cx="50" cy="50" r="40"/>
+            <circle class="progress" cx="50" cy="50" r="40" id="balance-progress"/>
+          </svg>
+          <div class="balance-text">
+            <div class="balance-amount">0₽</div>
+            <div class="balance-sub">из 0₽</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Заказов за:</div>
+        <div class="period-tabs">
+          <button class="period-btn active" onclick="filterOrders('today')">Сегодня</button>
+          <button class="period-btn" onclick="filterOrders('all')">Все время</button>
+        </div>
+        <div class="orders-count" id="orders-count">0</div>
+      </div>
+    </div>
+
+    <div class="orders-filters">
+      <button class="filter-btn" onclick="resetFilters()">Сбросить</button>
+      <select class="filter-select" id="filter-status" onchange="applyFilters()">
+        <option value="all">Все статусы</option>
+        <option value="pending">В обработке</option>
+        <option value="paid">Оплачено</option>
+        <option value="shipped">Отправлено</option>
+      </select>
+      <select class="filter-select" id="filter-delivery" onchange="applyFilters()">
+        <option value="all">Все доставки</option>
+        <option value="avito">Avito</option>
+        <option value="yandex">Яндекс</option>
+        <option value="cdek">СДЭК</option>
+      </select>
+    </div>
+
+    <div class="orders-list" id="orders-list">
+      <!-- Заказы будут здесь -->
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+      <button class="nav-btn" onclick="showScreen('home')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        <span>Главная</span>
+      </button>
+      <button class="nav-btn active" onclick="showScreen('profile')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+        <span>Профиль</span>
+      </button>
+    </nav>
   </div>
 
   <!-- ========== КАРТОЧКА ТОВАРА ========== -->
