@@ -98,6 +98,14 @@
         </div>
       </div>
 
+      <!-- КНОПКА ВОЗВРАТОВ -->
+      <button class="returns-btn" onclick="showScreen('returns')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l6-6M3 10l6 6"/>
+        </svg>
+        <span>Оформить возврат</span>
+      </button>
+
       <div class="orders-list" id="orders-list"></div>
     </div>
 
@@ -246,7 +254,7 @@
   <!-- ========== ВОЗВРАТ ========== -->
   <div id="screen-returns" class="screen">
     <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('home')">
+      <button class="back-btn-icon" onclick="showScreen('profile')">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </button>
       <div class="step-info">
