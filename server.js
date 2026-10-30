@@ -208,18 +208,16 @@ bot.command('orders', async (ctx) => {
 });
 
 bot.command('returns', async (ctx) => {
-  const userId = ctx.from.id;
-  const returns = loadReturns();
-  const userReturns = returns.filter(r => r.userId === userId);
-
-  if (userReturns.length === 0) {
-    await ctx.reply('У вас пока нет заявок на возврат.', {
-      reply_markup: {
-        inline_keyboard: [[
-          { text: '↩️ Оформить возврат', web_app: { url: WEB_APP_URL + '#returns' } }
-        ]]
-      }
-    });
+  // ... проверка истории ...
+  await ctx.reply('Оформить возврат:', {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '↩️ Оформить возврат', web_app: { url: WEB_APP_URL + '#returns' } } 
+        // ^^^ Обязательно добавь #returns сюда тоже!
+      ]]
+    }
+  });
+});
     return;
   }
 
@@ -278,7 +276,7 @@ bot.start((ctx) => {
       reply_markup: {
         inline_keyboard: [
           [{ text: '🛍 Открыть магазин', web_app: { url: WEB_APP_URL } }],
-          [{ text: '📦 Мои заказы', callback_data: 'orders' }, { text: '↩️ Возвраты', web_app: { url: WEB_APP_URL + '#returns' } }],
+          [{ text: '📦 Мои заказы', callback_data: 'orders' }, { text: '↩️ Возвраты', web_app: { url: WEB_APP_URL + '#returns' } }
           [{ text: '💬 Поддержка', callback_data: 'support' }]
         ]
       }
