@@ -12,8 +12,6 @@
 
   <!-- ========== ГЛАВНАЯ ========== -->
   <div id="screen-home" class="screen active">
-    
-    <!-- Шапка -->
     <header class="main-header">
       <div class="header-top">
         <div class="logo-wrap">
@@ -31,7 +29,6 @@
         </div>
       </div>
 
-      <!-- Баннер -->
       <div class="hero-banner">
         <div class="hero-pattern">
           <div class="pattern-x">X</div>
@@ -51,7 +48,6 @@
         </div>
       </div>
 
-      <!-- Поиск -->
       <div class="search-box">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -60,10 +56,8 @@
       </div>
     </header>
 
-    <!-- Табы категорий -->
     <div class="category-tabs" id="category-tabs"></div>
 
-    <!-- Каталог -->
     <div class="catalog-section" id="catalog-section">
       <div class="catalog-header">
         <div>
@@ -123,8 +117,8 @@
     </div>
   </div>
 
-  <!-- ========== ОПЛАТА ШАГ 1 ========== -->
-  <div id="screen-payment1" class="screen">
+  <!-- ========== ФОРМА ЗАЯВКИ ========== -->
+  <div id="screen-payment2" class="screen">
     <div class="payment-top-bar">
       <button class="back-btn-icon" onclick="showScreen('product')">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
@@ -132,83 +126,7 @@
         </svg>
       </button>
       <div class="step-info">
-        <div class="step-label">STEP 01 / 02</div>
-        <div class="step-title">Твой заказ</div>
-      </div>
-      <div class="logo-x-small">
-        <span class="logo-letter-small">X</span>
-      </div>
-    </div>
-
-    <div class="order-summary">
-      <div class="summary-header">
-        <div class="summary-icon"></div>
-        <div>
-          <div class="summary-title">Детали заказа</div>
-          <div class="summary-sub">Проверь перед оформлением</div>
-        </div>
-      </div>
-      <div class="summary-divider"></div>
-      <div class="summary-row">
-        <span class="summary-label">Товар</span>
-        <strong class="summary-value" id="pay-name"></strong>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">Размер</span>
-        <strong class="summary-value" id="pay-size"></strong>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">Количество</span>
-        <strong class="summary-value">1 шт.</strong>
-      </div>
-    </div>
-
-    <div class="total-block">
-      <div class="total-top">
-        <span class="total-label">ИТОГО К ОПЛАТЕ</span>
-        <span class="total-currency">RUB</span>
-      </div>
-      <div class="total-amount" id="pay-total"></div>
-      <div class="total-bar"></div>
-    </div>
-
-    <div class="method-block">
-      <h3 class="method-title">Способ оплаты</h3>
-      <div class="method-option active">
-        <div class="method-icon-wrap">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2">
-            <rect x="2" y="5" width="20" height="14" rx="2"/>
-            <line x1="2" y1="10" x2="22" y2="10"/>
-          </svg>
-        </div>
-        <div>
-          <div class="method-name">Перевод на карту</div>
-          <div class="method-sub">Сбербанк / Тинькофф / СБП</div>
-        </div>
-        <div class="method-check">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <button class="btn-primary" onclick="showScreen('payment2')">
-      <span>ДАЛЕЕ</span>
-      <span class="btn-arrow">→</span>
-    </button>
-  </div>
-
-  <!-- ========== ФОРМА ЗАЯВКИ ========== -->
-  <div id="screen-payment2" class="screen">
-    <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('payment1')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <div class="step-info">
-        <div class="step-label">STEP 02 / 02</div>
+        <div class="step-label">ЗАЯВКА</div>
         <div class="step-title">Заполните данные</div>
       </div>
       <div class="logo-x-small">
@@ -292,7 +210,7 @@
     </div>
 
     <div class="info-note">
-      <span class="info-icon">️</span>
+      <span class="info-icon">ℹ️</span>
       <span>После отправки заявки менеджер свяжется с вами для уточнения оплаты</span>
     </div>
 
@@ -351,7 +269,7 @@
       </div>
     </div>
 
-    <div class="form-block" style="border-color: var(--accent-border)">
+    <div class="form-block">
       <div class="form-header">
         <h3 style="color: var(--accent-red)">Данные возврата</h3>
         <span class="required-badge">Обязательно</span>
@@ -379,24 +297,51 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Адрес возврата</label>
+        <label class="form-label">Адрес, куда прибыл товар</label>
         <input type="text" id="return-address" placeholder="Город, улица, дом, квартира" class="form-input">
       </div>
 
       <div class="form-group">
-        <label class="form-label">Телефон</label>
+        <label class="form-label">Код выдачи (если есть)</label>
+        <input type="text" id="return-pickup-code" placeholder="Код из СМС или приложения" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Телефон для связи</label>
         <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
       </div>
     </div>
 
-    <div class="upload-block" style="border-color: var(--accent-border)">
+    <div class="upload-block">
       <div class="upload-header">
-        <h3 style="color: var(--accent-red)">QR-код для возврата</h3>
+        <h3>Фото товара</h3>
+        <span class="required-badge">Обязательно</span>
+      </div>
+      <label class="upload-zone" id="upload-zone-return-photo">
+        <input type="file" id="file-return-photo" accept="image/*" onchange="handleReturnFile(this, 'photo')">
+        <div class="upload-icon-wrap">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+        <div class="upload-text">Загрузить фото товара</div>
+        <div class="upload-formats">JPG, PNG до 10 МБ</div>
+      </label>
+      <div id="preview-return-photo" style="display:none">
+        <img id="preview-img-return-photo" class="preview-img">
+      </div>
+    </div>
+
+    <div class="upload-block">
+      <div class="upload-header">
+        <h3>QR-код для возврата</h3>
         <span class="required-badge">Обязательно</span>
       </div>
       <label class="upload-zone" id="upload-zone-return-qr">
-        <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this)">
-        <div class="upload-icon-wrap" style="background: rgba(255, 77, 109, 0.1)">
+        <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this, 'qr')">
+        <div class="upload-icon-wrap">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2.5">
             <rect x="3" y="3" width="7" height="7"/>
             <rect x="14" y="3" width="7" height="7"/>
@@ -411,17 +356,17 @@
         <div class="upload-formats">JPG, PNG до 10 МБ</div>
       </label>
       <div id="preview-return-qr" style="display:none">
-        <img id="preview-img-return-qr" class="preview-img" style="border-color: var(--accent-border)">
+        <img id="preview-img-return-qr" class="preview-img">
       </div>
     </div>
 
     <div class="info-note" style="background: rgba(255, 77, 109, 0.08); border-color: rgba(255, 77, 109, 0.2)">
       <span class="info-icon" style="color: var(--accent-red)">ℹ️</span>
-      <span>После отправки менеджер свяжется с вами для подтверждения</span>
+      <span>После отправки менеджер свяжется с вами для подтверждения возврата</span>
     </div>
 
     <button class="btn-primary" id="btn-return" onclick="submitReturn()" disabled style="background: linear-gradient(135deg, var(--accent-red) 0%, #ff2d55 100%); box-shadow: 0 4px 16px rgba(255, 77, 109, 0.3)">
-      <span>ОТПРАВИТЬ ЗАЯВКУ</span>
+      <span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span>
       <span class="btn-arrow">→</span>
     </button>
   </div>
