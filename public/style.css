@@ -80,7 +80,6 @@ body {
 .catalog-title { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--text); }
 .catalog-count { color: var(--text-muted); font-size: 12px; font-weight: 600; }
 
-/* === УЛУЧШЕННЫЕ КАРТОЧКИ ТОВАРОВ === */
 .product-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -147,9 +146,7 @@ body {
 .badge-stock { background: var(--accent); }
 .badge-limited { background: var(--accent-red); color: #fff; }
 
-.prod-info {
-  padding: 12px;
-}
+.prod-info { padding: 12px; }
 
 .prod-name {
   font-size: 13px;
@@ -178,10 +175,65 @@ body {
 .product-top-title { font-size: 14px; font-weight: 700; color: var(--text); }
 .logo-x-small { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
 .logo-letter-small { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #000; line-height: 1; }
-.product-image-wrap { position: relative; }
-.product-full-img { width: 100%; height: 380px; object-fit: cover; }
-.p-badges { position: absolute; top: 16px; left: 16px; display: flex; gap: 8px; }
-.p-badges .badge { font-size: 10px; padding: 6px 12px; }
+
+/* === КРАСИВОЕ ОФОРМЛЕНИЕ ФОТО ТОВАРА === */
+.product-image-wrap {
+  position: relative;
+  padding: 16px;
+  background: var(--bg);
+}
+
+.product-image-frame {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+}
+
+.product-image-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0, 0, 0, 0.3) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.product-full-img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-image-frame:active .product-full-img {
+  transform: scale(1.03);
+}
+
+.p-badges {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.p-badges .badge {
+  font-size: 10px;
+  padding: 6px 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .product-details { padding: 20px 16px; }
 .p-category { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; }
 .p-title { font-family: var(--font-display); font-size: 24px; font-weight: 800; margin-bottom: 16px; line-height: 1.1; }
