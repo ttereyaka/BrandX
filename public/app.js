@@ -1,26 +1,15 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
-// Проверка хэша при загрузке
-if (window.location.hash === '#returns') {
-  showScreen('returns');
-}
 
-// Отслеживание изменения хэша
-window.addEventListener('hashchange', () => {
-  if (window.location.hash === '#returns') {
-    showScreen('returns');
-  }
-});
 let products = [];
 let categories = [
   { id: 'all', name: 'Все' },
-  { id: 'jackets', name: 'Куртки и пуховики' },
-  { id: 'hoodies', name: 'Худи и свитшоты' },
-  { id: 'sviter', name: 'Свитера и кардиганы' },
+  { id: 'jackets', name: 'Верхняя одежда' },
+  { id: 'hoodies', name: 'Худи' },
   { id: 'tshirts', name: 'Футболки' },
   { id: 'shirts', name: 'Рубашки' },
-  { id: 'shorts', name: 'Шорты и брюки' },
-  { id: 'accessories', name: 'Сумки' }
+  { id: 'shorts', name: 'Шорты' },
+  { id: 'accessories', name: 'Аксессуары' }
 ];
 
 let currentProduct = null;
@@ -29,11 +18,20 @@ let uploadedFiles = {
   product: null,
   qr: null
 };
+let returnFiles = {
+  photo: null,
+  qr: null
+};
 let activeCategory = 'all';
 
 const SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 const SHEET_NAME = 'Лист10';
 const SERVER_URL = 'https://brandx-production-c65f.up.railway.app';
+
+// Проверка хэша при загрузке
+if (window.location.hash === '#returns') {
+  showScreen('returns');
+}
 
 async function loadData() {
   try {
@@ -202,10 +200,8 @@ function selectSize(el) {
 }
 
 function goToPayment() {
-  // Заполняем форму данными товара
   document.getElementById('form-product').value = currentProduct.name;
   document.getElementById('form-size').value = selectedSize;
-  
   showScreen('payment2');
 }
 
@@ -249,16 +245,6 @@ function checkFormValid() {
     btn.disabled = true;
   }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const fields = ['form-product', 'form-pvz', 'form-size', 'form-track'];
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', checkFormValid);
-    }
-  });
-});
 
 async function submitApplication() {
   const product = document.getElementById('form-product').value.trim();
@@ -323,13 +309,154 @@ async function submitApplication() {
   showScreen('success');
 }
 
+// ===== ФУНКЦИИ ДЛЯ ВОЗВРАТОВ =====
+
+function handleReturnFile(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Файл слишком большой. Максимум 10 МБ.');
+    return;
+  }
+
+  returnFiles[type] = file;
+
+  const previewId = `preview-return-${type}`;
+  const previewImgId = `preview-img-return-${type}`;
+  
+  document.getElementById(previewId).style.display = 'block';
+
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById(previewImgId).src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  checkReturnFormValid();
+}
+
+function checkReturnFormValid() {
+  const orderId = document.getElementById('return-order-id').value.trim();
+  const product = document.getElementById('return-product').value.trim();
+  const reason = document.getElementById('return-reason').value;
+  const address = document.getElementById('return-address').value.trim();
+  const phone = document.getElementById('return-phone').value.trim();
+  
+  const btn = document.getElementById('btn-return');
+  
+  if (orderId && product && reason && address && phone && returnFiles.photo && returnFiles.qr) {
+    btn.disabled = false;
+  } else {
+    btn.disabled = true;
+  }
+}
+
+async function submitReturn() {
+  const orderId = document.getElementById('return-order-id').value.trim();
+  const product = document.getElementById('return-product').value.trim();
+  const reason = document.getElementById('return-reason').value;
+  const address = document.getElementById('return-address').value.trim();
+  const pickupCode = document.getElementById('return-pickup-code').value.trim();
+  const phone = document.getElementById('return-phone').value.trim();
+
+  if (!orderId || !product || !reason || !address || !phone) {
+    alert('Пожалуйста, заполните все обязательные поля');
+    return;
+  }
+
+  if (!returnFiles.photo || !returnFiles.qr) {
+    alert('Пожалуйста, загрузите фото товара и QR-код');
+    return;
+  }
+
+  const btn = document.getElementById('btn-return');
+  btn.disabled = true;
+  btn.innerHTML = '<span>ОТПРАВКА...</span>';
+
+  const returnId = 'RET-' + Date.now().toString().slice(-6);
+
+  const returnData = {
+    returnId,
+    orderId,
+    product,
+    reason,
+    address,
+    pickupCode: pickupCode || 'Не указан',
+    phone,
+    userId: tg.initDataUnsafe?.user?.id,
+    username: tg.initDataUnsafe?.user?.username,
+    firstName: tg.initDataUnsafe?.user?.first_name
+  };
+
+  try {
+    const formData = new FormData();
+    formData.append('return', JSON.stringify(returnData));
+    formData.append('productPhoto', returnFiles.photo);
+    formData.append('qrCode', returnFiles.qr);
+
+    const response = await fetch(`${SERVER_URL}/api/return`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) throw new Error('Ошибка сервера');
+
+    alert(`✅ Заявка на возврат #${returnId} отправлена!\n\nМенеджер свяжется с вами в течение 30 минут.`);
+    
+    // Сброс формы
+    document.getElementById('return-order-id').value = '';
+    document.getElementById('return-product').value = '';
+    document.getElementById('return-reason').value = '';
+    document.getElementById('return-address').value = '';
+    document.getElementById('return-pickup-code').value = '';
+    document.getElementById('return-phone').value = '';
+    document.getElementById('preview-return-photo').style.display = 'none';
+    document.getElementById('preview-return-qr').style.display = 'none';
+    returnFiles = { photo: null, qr: null };
+    btn.disabled = true;
+    btn.innerHTML = '<span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span><span class="btn-arrow">→</span>';
+
+    showScreen('home');
+
+  } catch (err) {
+    console.error('Ошибка отправки:', err);
+    alert('Произошла ошибка. Попробуйте ещё раз.');
+    btn.disabled = false;
+    btn.innerHTML = '<span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span><span class="btn-arrow">→</span>';
+    return;
+  }
+}
+
+// Слушатели для полей формы
+document.addEventListener('DOMContentLoaded', () => {
+  const fields = ['form-product', 'form-pvz', 'form-size', 'form-track'];
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', checkFormValid);
+    }
+  });
+
+  const returnFields = ['return-order-id', 'return-product', 'return-reason', 'return-address', 'return-pickup-code', 'return-phone'];
+  returnFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', checkReturnFormValid);
+      el.addEventListener('change', checkReturnFormValid);
+    }
+  });
+});
+
 // Мок для тестов в браузере
 if (!window.Telegram) {
   window.Telegram = {
     WebApp: {
       expand: () => console.log('Telegram: expand()'),
       sendData: (data) => {
-        console.log(' sendData:', data);
+        console.log('📤 sendData:', data);
         alert('Данные отправлены боту:\n' + data);
       },
       initDataUnsafe: {
