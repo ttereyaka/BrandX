@@ -23,7 +23,6 @@ const SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 const SHEET_NAME = 'Лист10';
 const SERVER_URL = 'https://brandx-production-c65f.up.railway.app';
 
-// Проверка хэша при загрузке
 if (window.location.hash === '#returns') {
   showScreen('returns');
 }
@@ -32,7 +31,7 @@ async function loadData() {
   try {
     const url = `https://opensheet.elk.sh/${SHEET_ID}/${encodeURIComponent(SHEET_NAME)}`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Не удалось загрузить таблицу');
+    if (!response.ok) throw new Error('Ошибка загрузки');
     
     const rawData = await response.json();
     products = rawData.map(row => {
@@ -57,7 +56,7 @@ async function loadData() {
     renderCategories();
     renderProducts();
   } catch (error) {
-    console.error('Ошибка загрузки данных:', error);
+    console.error('Ошибка:', error);
   }
 }
 
@@ -65,9 +64,12 @@ function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   
-  // Обновляем активную кнопку в нижней панели
   document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.screen === name);
+    btn.classList.remove('active');
+  });
+  
+  document.querySelectorAll(`.nav-btn[onclick="showScreen('${name}')"]`).forEach(btn => {
+    btn.classList.add('active');
   });
 
   window.scrollTo(0, 0);
@@ -80,7 +82,7 @@ function showScreen(name) {
 function loadProfile() {
   const user = tg.initDataUnsafe?.user;
   if (user) {
-    document.getElementById('profile-name').textContent = user.first_name || 'Пользователь';
+    document.getElementById('profile-name').textContent = user.first_name || 'Гость';
     document.getElementById('profile-username').textContent = user.username ? `@${user.username}` : 'Пользователь';
     if (user.photo_url) {
       document.getElementById('profile-photo').src = user.photo_url;
@@ -98,29 +100,38 @@ async function loadUserOrders() {
       headers: { 'X-Init-Data': tg.initData }
     });
     
-    if (!response.ok) throw new Error('Ошибка авторизации');
+    if (!response.ok) throw new Error('Ошибка');
     const data = await response.json();
     allUserOrders = data.orders || [];
     
     document.getElementById('orders-count').textContent = allUserOrders.length;
+    
+    const totalSum = allUserOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+    const paidSum = allUserOrders.filter(o => o.status === 'paid' || o.status === 'shipped' || o.status === 'delivered')
+      .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+    
+    document.getElementById('balance-amount').textContent = `${paidSum.toLocaleString()}₽`;
+    document.getElementById('balance-sub').textContent = `оплачено ${paidSum.toLocaleString()} из ${totalSum.toLocaleString()}`;
+    
+    const circle = document.querySelector('.balance-circle .progress');
+    if (circle) {
+      const percent = totalSum > 0 ? (paidSum / totalSum) : 0;
+      const offset = 251.2 - (percent * 251.2);
+      circle.style.strokeDashoffset = offset;
+    }
+    
     renderOrders(allUserOrders);
   } catch (error) {
-    console.error('Ошибка загрузки заказов:', error);
+    console.error('Ошибка:', error);
     list.innerHTML = '<div class="empty-orders"><p>Не удалось загрузить заказы</p></div>';
   }
 }
 
 function renderOrders(orders) {
   const list = document.getElementById('orders-list');
+  
   if (orders.length === 0) {
-    list.innerHTML = `
-      <div class="empty-orders">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-        </svg>
-        <p>Заказов не найдено</p>
-        <button class="btn-small" onclick="showScreen('home')">Перейти в каталог</button>
-      </div>`;
+    list.innerHTML = '<div class="empty-orders"><p>Заказов пока нет</p></div>';
     return;
   }
 
@@ -141,35 +152,13 @@ function renderOrders(orders) {
             <div class="order-title">${o.product}</div>
             <div class="order-meta">Размер: ${o.size} • ПВЗ: ${o.pvz}</div>
             <div class="order-meta">${new Date(o.date).toLocaleDateString('ru-RU')}</div>
-            <div class="order-price">${Number(o.price).toLocaleString()} ₽</6>
+            <div class="order-price">${Number(o.price).toLocaleString()} ₽</div>
             ${trackHtml}
           </div>
         </div>
       </div>
     `;
   }).join('');
-}
-
-function applyFilters() {
-  const status = document.getElementById('filter-status').value;
-  const delivery = document.getElementById('filter-delivery').value;
-
-  let filtered = allUserOrders;
-  if (status !== 'all') {
-    // Простое сопоставление для демо (в реальном приложении статусы могут отличаться)
-    const statusMap = { 'pending': 'В обработке', 'paid': 'Оплачено', 'shipped': 'В пути' };
-    filtered = filtered.filter(o => o.status === statusMap[status]);
-  }
-  if (delivery !== 'all') {
-    filtered = filtered.filter(o => o.pvz && o.pvz.toLowerCase().includes(delivery));
-  }
-  renderOrders(filtered);
-}
-
-function resetFilters() {
-  document.getElementById('filter-status').value = 'all';
-  document.getElementById('filter-delivery').value = 'all';
-  renderOrders(allUserOrders);
 }
 
 function renderCategories() {
@@ -201,7 +190,7 @@ function renderProducts() {
   const filtered = getFilteredProducts();
   const grid = document.getElementById('product-grid');
   const count = document.getElementById('catalog-count');
-  count.textContent = filtered.length + ' item' + (filtered.length !== 1 ? 's' : '');
+  count.textContent = filtered.length + ' товаров';
 
   if (filtered.length === 0) {
     grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">Товары не найдены</div>';
@@ -318,7 +307,7 @@ async function submitApplication() {
   const track = document.getElementById('form-track').value.trim();
 
   if (!product || !pvz || !size || !uploadedFiles.product || !uploadedFiles.qr) {
-    alert('Заполните все обязательные поля и загрузите файлы'); return;
+    alert('Заполните все поля и загрузите файлы'); return;
   }
 
   const btn = document.getElementById('btn-finish');
@@ -328,7 +317,7 @@ async function submitApplication() {
   const orderData = {
     orderId, product, pvz, size, track: track || 'Не указан',
     price: currentProduct ? currentProduct.price : 0,
-    initData: tg.initData // Передаем для верификации на сервере
+    initData: tg.initData
   };
 
   try {
@@ -347,13 +336,12 @@ async function submitApplication() {
     document.getElementById('success-pvz').textContent = pvz;
     showScreen('success');
   } catch (err) {
-    console.error('Ошибка отправки:', err);
+    console.error('Ошибка:', err);
     alert('Произошла ошибка. Попробуйте ещё раз.');
     btn.disabled = false; btn.innerHTML = '<span>ОТПРАВИТЬ ЗАЯВКУ</span><span class="btn-arrow">→</span>';
   }
 }
 
-// --- ВОЗВРАТЫ ---
 function handleReturnFile(input, type) {
   const file = input.files[0];
   if (!file) return;
@@ -389,7 +377,7 @@ async function submitReturn() {
   const phone = document.getElementById('return-phone').value.trim();
 
   if (!orderId || !product || !reason || !address || !phone || !returnFiles.photo || !returnFiles.qr) {
-    alert('Заполните все обязательные поля и загрузите файлы'); return;
+    alert('Заполните все поля и загрузите файлы'); return;
   }
 
   const btn = document.getElementById('btn-return');
@@ -412,9 +400,8 @@ async function submitReturn() {
     const response = await fetch(`${SERVER_URL}/api/return`, { method: 'POST', body: formData });
     if (!response.ok) throw new Error('Ошибка сервера');
 
-    alert(`✅ Заявка на возврат #${returnId} отправлена!\n\nМенеджер свяжется с вами в течение 30 минут.`);
+    alert(`✅ Заявка на возврат #${returnId} отправлена!`);
     
-    // Сброс
     ['return-order-id', 'return-product', 'return-reason', 'return-address', 'return-pickup-code', 'return-phone'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('preview-return-photo').style.display = 'none';
     document.getElementById('preview-return-qr').style.display = 'none';
@@ -422,13 +409,12 @@ async function submitReturn() {
     btn.disabled = true; btn.innerHTML = '<span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span><span class="btn-arrow">→</span>';
     showScreen('home');
   } catch (err) {
-    console.error('Ошибка отправки:', err);
+    console.error('Ошибка:', err);
     alert('Произошла ошибка. Попробуйте ещё раз.');
     btn.disabled = false; btn.innerHTML = '<span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span><span class="btn-arrow">→</span>';
   }
 }
 
-// Слушатели событий
 document.addEventListener('DOMContentLoaded', () => {
   ['form-product', 'form-pvz', 'form-size', 'form-track'].forEach(id => {
     const el = document.getElementById(id);
@@ -441,11 +427,6 @@ document.addEventListener('DOMContentLoaded', () => {
       el.addEventListener('input', checkReturnFormValid);
       el.addEventListener('change', checkReturnFormValid);
     }
-  });
-
-  // Навигация нижней панели
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => showScreen(btn.dataset.screen));
   });
 });
 
