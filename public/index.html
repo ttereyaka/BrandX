@@ -2,31 +2,36 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <title>BRAND X</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/profile.css">
 </head>
 <body>
+
+  <!-- Иконки (используются через <use>) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></symbol>
+  </svg>
 
   <!-- ========== ГЛАВНАЯ ========== -->
   <div id="screen-home" class="screen active">
     <header class="main-header">
       <div class="header-top">
         <div class="logo-wrap">
-          <div class="logo-x">
-            <span class="logo-letter">X</span>
-          </div>
+          <div class="logo-x"><span class="logo-letter">X</span></div>
           <div class="brand-info">
             <span class="brand-name">BRAND X</span>
             <span class="brand-tag">streetwear • resale</span>
           </div>
         </div>
-        <div class="online-badge">
-          <span class="online-dot"></span>
-          <span>LIVE</span>
-        </div>
+        <div class="online-badge"><span class="online-dot"></span><span>LIVE</span></div>
       </div>
 
       <div class="hero-banner">
@@ -36,22 +41,15 @@
           <div class="pattern-x pattern-x-3">X</div>
         </div>
         <div class="hero-content">
-          <div class="hero-label">
-            <span class="label-dot"></span>
-            NEW DROP 2026
-          </div>
+          <div class="hero-label"><span class="label-dot"></span>NEW DROP 2026</div>
           <h1 class="hero-title">ЗАРАБАТЫВАЙ<br>С <span class="accent-text">BRAND X</span></h1>
           <p class="hero-sub">Новый дроп уже в каталоге</p>
-          <button class="hero-cta" onclick="document.getElementById('catalog-section').scrollIntoView({behavior:'smooth'})">
-            СМОТРЕТЬ КАТАЛОГ →
-          </button>
+          <button class="hero-cta" onclick="document.getElementById('catalog-section').scrollIntoView({behavior:'smooth'})">СМОТРЕТЬ КАТАЛОГ →</button>
         </div>
       </div>
 
       <div class="search-box">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input type="text" placeholder="Найти дроп..." id="search-input" oninput="filterProducts()">
       </div>
     </header>
@@ -64,54 +62,31 @@
           <div class="catalog-label">// КАТАЛОГ</div>
           <h2 class="catalog-title">Хайп коллекция</h2>
         </div>
-        <div class="catalog-count" id="catalog-count">0 items</div>
+        <div class="catalog-count" id="catalog-count">0 товаров</div>
       </div>
       <div class="product-grid" id="product-grid"></div>
     </div>
-
-    <nav class="bottom-nav">
-      <button class="nav-btn active" data-screen="home">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-        <span>Главная</span>
-      </button>
-      <button class="nav-btn" data-screen="profile">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-        </svg>
-        <span>Профиль</span>
-      </button>
-    </nav>
   </div>
 
   <!-- ========== ПРОФИЛЬ ========== -->
   <div id="screen-profile" class="screen">
     <div class="profile-container">
       <div class="profile-header">
-        <div class="profile-avatar">
-          <img id="profile-photo" src="https://via.placeholder.com/100/ff7a45/000000?text=X" alt="Avatar">
-        </div>
+        <div class="profile-avatar"><img id="profile-photo" src="https://via.placeholder.com/100/ff7a45/000000?text=X" alt="Аватар"></div>
         <div class="profile-info">
-          <h2 id="profile-name">Пользователь</h2>
-          <div class="profile-status">
-            <span class="status-dot"></span>
-            <span id="profile-username">@username</span>
-          </div>
+          <h2 id="profile-name">Гость</h2>
+          <div class="profile-status"><span class="status-dot"></span><span id="profile-username">@username</span></div>
         </div>
       </div>
 
       <div class="profile-stats">
         <div class="stat-card">
-          <div class="stat-label">Баланс</div>
+          <div class="stat-label">Сумма заказов</div>
           <div class="balance-circle">
-            <svg viewBox="0 0 100 100">
-              <circle class="bg" cx="50" cy="50" r="40"/>
-              <circle class="progress" cx="50" cy="50" r="40"/>
-            </svg>
+            <svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="40"/><circle class="progress" cx="50" cy="50" r="40"/></svg>
             <div class="balance-text">
               <div class="balance-amount">0₽</div>
-              <div class="balance-sub">из 0₽</div>
+              <div class="balance-sub">оплачено 0 из 0</div>
             </div>
           </div>
         </div>
@@ -132,7 +107,7 @@
           <option value="all">Все статусы</option>
           <option value="pending">В обработке</option>
           <option value="paid">Оплачено</option>
-          <option value="shipped">Отправлено</option>
+          <option value="shipped">В пути</option>
         </select>
         <select class="filter-select" id="filter-delivery">
           <option value="all">Все доставки</option>
@@ -142,56 +117,27 @@
         </select>
       </div>
 
-      <div class="orders-list" id="orders-list">
-        <div class="empty-orders">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-          </svg>
-          <p>Заказов пока нет</p>
-          <button class="btn-small" onclick="showScreen('home')">Перейти в каталог</button>
-        </div>
-      </div>
+      <div class="orders-list" id="orders-list"></div>
     </div>
-
-    <nav class="bottom-nav">
-      <button class="nav-btn" data-screen="home">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-        <span>Главная</span>
-      </button>
-      <button class="nav-btn active" data-screen="profile">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-        </svg>
-        <span>Профиль</span>
-      </button>
-    </nav>
   </div>
 
   <!-- ========== КАРТОЧКА ТОВАРА ========== -->
   <div id="screen-product" class="screen">
     <div class="product-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('home')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
+      <button class="back-btn-icon" onclick="showScreen('home')" aria-label="Назад"><svg width="20" height="20" style="color:#fff"><use href="#i-back"/></svg></button>
       <span class="product-top-title">Детали товара</span>
-      <div class="logo-x-small">
-        <span class="logo-letter-small">X</span>
-      </div>
+      <div class="logo-x-small"><span class="logo-letter-small">X</span></div>
     </div>
 
     <div class="product-image-wrap">
-      <img id="p-image" class="product-full-img">
+      <img id="p-image" class="product-full-img" alt="">
       <div class="p-badges" id="p-badges"></div>
     </div>
 
     <div class="product-details">
       <div class="p-category" id="p-category"></div>
       <h1 class="p-title" id="p-title"></h1>
-      
+
       <div class="price-block">
         <div class="price-tag">
           <span class="price-label">ЦЕНА</span>
@@ -210,8 +156,7 @@
       <div class="stock-bar" id="p-stock"></div>
 
       <button class="btn-primary" id="btn-buy" onclick="goToPayment()" disabled>
-        <span>ОФОРМИТЬ ЗАЯВКУ</span>
-        <span class="btn-arrow">→</span>
+        <span>ОФОРМИТЬ ЗАЯВКУ</span><span class="btn-arrow">→</span>
       </button>
     </div>
   </div>
@@ -219,93 +164,54 @@
   <!-- ========== ФОРМА ЗАЯВКИ ========== -->
   <div id="screen-payment2" class="screen">
     <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('product')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
+      <button class="back-btn-icon" onclick="showScreen('product')" aria-label="Назад"><svg width="20" height="20" style="color:#fff"><use href="#i-back"/></svg></button>
       <div class="step-info">
         <div class="step-label">ЗАЯВКА</div>
         <div class="step-title">Заполните данные</div>
       </div>
-      <div class="logo-x-small">
-        <span class="logo-letter-small">X</span>
-      </div>
+      <div class="logo-x-small"><span class="logo-letter-small">X</span></div>
     </div>
 
     <div class="form-block">
-      <div class="form-header">
-        <h3>Данные заказа</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
-      
+      <div class="form-header"><h3>Данные заказа</h3><span class="required-badge">Обязательно</span></div>
       <div class="form-group">
-        <label class="form-label">Товар</label>
+        <label class="form-label" for="form-product">Товар</label>
         <input type="text" id="form-product" placeholder="Например: Футболка ERD" class="form-input">
       </div>
-
       <div class="form-group">
-        <label class="form-label">ПВЗ доставки</label>
+        <label class="form-label" for="form-pvz">ПВЗ доставки</label>
         <input type="text" id="form-pvz" placeholder="Например: Яндекс, Почта России, СДЭК" class="form-input">
       </div>
-
       <div class="form-group">
-        <label class="form-label">Размер</label>
+        <label class="form-label" for="form-size">Размер</label>
         <input type="text" id="form-size" placeholder="Например: M, L, XL" class="form-input">
       </div>
-
       <div class="form-group">
-        <label class="form-label">Трек-номер (если есть)</label>
+        <label class="form-label" for="form-track">Трек-номер (если есть)</label>
         <input type="text" id="form-track" placeholder="Оставьте пустым, если ещё нет" class="form-input">
       </div>
     </div>
 
     <div class="upload-block">
-      <div class="upload-header">
-        <h3>Фото товара</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
+      <div class="upload-header"><h3>Фото товара</h3><span class="required-badge">Обязательно</span></div>
       <label class="upload-zone" id="upload-zone-product">
         <input type="file" id="file-product" accept="image/*" onchange="handleFile(this, 'product')">
-        <div class="upload-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-        </div>
+        <div class="upload-icon-wrap"><svg width="28" height="28" style="color:var(--accent)"><use href="#i-photo"/></svg></div>
         <div class="upload-text">Загрузить фото товара</div>
         <div class="upload-formats">JPG, PNG до 10 МБ</div>
       </label>
-      <div id="preview-product" style="display:none">
-        <img id="preview-img-product" class="preview-img">
-      </div>
+      <div id="preview-product" style="display:none"><img id="preview-img-product" class="preview-img" alt=""></div>
     </div>
 
     <div class="upload-block">
-      <div class="upload-header">
-        <h3>QR-код для отправки</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
+      <div class="upload-header"><h3>QR-код для отправки</h3><span class="required-badge">Обязательно</span></div>
       <label class="upload-zone" id="upload-zone-qr">
         <input type="file" id="file-qr" accept="image/*" onchange="handleFile(this, 'qr')">
-        <div class="upload-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7a45" stroke-width="2.5">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-            <rect x="14" y="14" width="3" height="3"/>
-            <rect x="18" y="14" width="3" height="3"/>
-            <rect x="14" y="18" width="3" height="3"/>
-            <rect x="18" y="18" width="3" height="3"/>
-          </svg>
-        </div>
+        <div class="upload-icon-wrap"><svg width="28" height="28" style="color:var(--accent)"><use href="#i-qr"/></svg></div>
         <div class="upload-text">Загрузить QR-код</div>
         <div class="upload-formats">JPG, PNG до 10 МБ</div>
       </label>
-      <div id="preview-qr" style="display:none">
-        <img id="preview-img-qr" class="preview-img">
-      </div>
+      <div id="preview-qr" style="display:none"><img id="preview-img-qr" class="preview-img" alt=""></div>
     </div>
 
     <div class="info-note">
@@ -314,78 +220,52 @@
     </div>
 
     <button class="btn-primary" id="btn-finish" onclick="submitApplication()" disabled>
-      <span>ОТПРАВИТЬ ЗАЯВКУ</span>
-      <span class="btn-arrow">→</span>
+      <span>ОТПРАВИТЬ ЗАЯВКУ</span><span class="btn-arrow">→</span>
     </button>
   </div>
 
   <!-- ========== УСПЕХ ========== -->
   <div id="screen-success" class="screen">
     <div class="success-wrap">
-      <div class="success-logo">
-        <span class="logo-letter-big">X</span>
-      </div>
+      <div class="success-logo"><span class="logo-letter-big">X</span></div>
       <div class="success-check">✓</div>
       <h1 class="success-title">ЗАЯВКА ОТПРАВЛЕНА!</h1>
-      
+
       <div class="success-order-details">
-        <div class="detail-row">
-          <span class="detail-label">Товар</span>
-          <span class="detail-value" id="success-product"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Размер</span>
-          <span class="detail-value" id="success-size"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">ПВЗ</span>
-          <span class="detail-value" id="success-pvz"></span>
-        </div>
+        <div class="detail-row"><span class="detail-label">Товар</span><span class="detail-value" id="success-product"></span></div>
+        <div class="detail-row"><span class="detail-label">Размер</span><span class="detail-value" id="success-size"></span></div>
+        <div class="detail-row"><span class="detail-label">ПВЗ</span><span class="detail-value" id="success-pvz"></span></div>
       </div>
-      
+
       <p class="success-text">Менеджер свяжется с вами в течение 30 минут для уточнения оплаты.</p>
       <div class="success-order-id" id="success-order-id"></div>
-      <button class="btn-primary" onclick="showScreen('home')">
-        <span>ВЕРНУТЬСЯ В КАТАЛОГ</span>
-      </button>
+      <button class="btn-primary" onclick="showScreen('profile')"><span>МОИ ЗАКАЗЫ</span></button>
     </div>
   </div>
 
   <!-- ========== ВОЗВРАТ ========== -->
   <div id="screen-returns" class="screen">
     <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('home')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
+      <button class="back-btn-icon" onclick="showScreen('profile')" aria-label="Назад"><svg width="20" height="20" style="color:#fff"><use href="#i-back"/></svg></button>
       <div class="step-info">
         <div class="step-label" style="color: var(--accent-red)">ВОЗВРАТ</div>
         <div class="step-title">Оформление возврата</div>
       </div>
-      <div class="logo-x-small" style="background: var(--accent-red)">
-        <span class="logo-letter-small">X</span>
-      </div>
+      <div class="logo-x-small" style="background: var(--accent-red)"><span class="logo-letter-small">X</span></div>
     </div>
 
     <div class="form-block">
-      <div class="form-header">
-        <h3 style="color: var(--accent-red)">Данные возврата</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
-      
+      <div class="form-header"><h3 style="color: var(--accent-red)">Данные возврата</h3><span class="required-badge">Обязательно</span></div>
       <div class="form-group">
-        <label class="form-label">Номер заказа</label>
+        <label class="form-label" for="return-order-id">Номер заказа</label>
         <input type="text" id="return-order-id" placeholder="BX-123456" class="form-input">
       </div>
-
       <div class="form-group">
-        <label class="form-label">Товар</label>
+        <label class="form-label" for="return-product">Товар</label>
         <input type="text" id="return-product" placeholder="Футболка ERD белая" class="form-input">
       </div>
-
       <div class="form-group">
-        <label class="form-label">Причина возврата</label>
+        <label class="form-label" for="return-reason">Причина возврата</label>
         <select id="return-reason" class="form-input">
           <option value="">Выберите причину</option>
           <option value="Не подошел размер">Не подошел размер</option>
@@ -394,82 +274,53 @@
           <option value="Другое">Другое</option>
         </select>
       </div>
-
       <div class="form-group">
-        <label class="form-label">Адрес, куда прибыл товар</label>
+        <label class="form-label" for="return-address">Адрес, куда прибыл товар</label>
         <input type="text" id="return-address" placeholder="Город, улица, дом, квартира" class="form-input">
       </div>
-
       <div class="form-group">
-        <label class="form-label">Код выдачи (если есть)</label>
+        <label class="form-label" for="return-pickup-code">Код выдачи (если есть)</label>
         <input type="text" id="return-pickup-code" placeholder="Код из СМС или приложения" class="form-input">
       </div>
-
       <div class="form-group">
-        <label class="form-label">Телефон для связи</label>
+        <label class="form-label" for="return-phone">Телефон для связи</label>
         <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
       </div>
     </div>
 
     <div class="upload-block">
-      <div class="upload-header">
-        <h3>Фото товара</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
+      <div class="upload-header"><h3>Фото товара</h3><span class="required-badge">Обязательно</span></div>
       <label class="upload-zone" id="upload-zone-return-photo">
         <input type="file" id="file-return-photo" accept="image/*" onchange="handleReturnFile(this, 'photo')">
-        <div class="upload-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2.5">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-        </div>
+        <div class="upload-icon-wrap"><svg width="28" height="28" style="color:var(--accent-red)"><use href="#i-photo"/></svg></div>
         <div class="upload-text">Загрузить фото товара</div>
         <div class="upload-formats">JPG, PNG до 10 МБ</div>
       </label>
-      <div id="preview-return-photo" style="display:none">
-        <img id="preview-img-return-photo" class="preview-img">
-      </div>
+      <div id="preview-return-photo" style="display:none"><img id="preview-img-return-photo" class="preview-img" alt=""></div>
     </div>
 
     <div class="upload-block">
-      <div class="upload-header">
-        <h3>QR-код для возврата</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
+      <div class="upload-header"><h3>QR-код для возврата</h3><span class="required-badge">Обязательно</span></div>
       <label class="upload-zone" id="upload-zone-return-qr">
         <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this, 'qr')">
-        <div class="upload-icon-wrap">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2.5">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-            <rect x="14" y="14" width="3" height="3"/>
-            <rect x="18" y="14" width="3" height="3"/>
-            <rect x="14" y="18" width="3" height="3"/>
-            <rect x="18" y="18" width="3" height="3"/>
-          </svg>
-        </div>
+        <div class="upload-icon-wrap"><svg width="28" height="28" style="color:var(--accent-red)"><use href="#i-qr"/></svg></div>
         <div class="upload-text">Загрузить QR-код</div>
         <div class="upload-formats">JPG, PNG до 10 МБ</div>
       </label>
-      <div id="preview-return-qr" style="display:none">
-        <img id="preview-img-return-qr" class="preview-img">
-      </div>
+      <div id="preview-return-qr" style="display:none"><img id="preview-img-return-qr" class="preview-img" alt=""></div>
     </div>
 
     <div class="info-note" style="background: rgba(255, 77, 109, 0.08); border-color: rgba(255, 77, 109, 0.2)">
-      <span class="info-icon" style="color: var(--accent-red)">ℹ️</span>
+      <span class="info-icon">ℹ️</span>
       <span>После отправки менеджер свяжется с вами для подтверждения возврата</span>
     </div>
 
     <button class="btn-primary" id="btn-return" onclick="submitReturn()" disabled style="background: linear-gradient(135deg, var(--accent-red) 0%, #ff2d55 100%); box-shadow: 0 4px 16px rgba(255, 77, 109, 0.3)">
-      <span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span>
-      <span class="btn-arrow">→</span>
+      <span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span><span class="btn-arrow">→</span>
     </button>
   </div>
 
   <script src="/app.js"></script>
+  <script src="/profile.js"></script>
 </body>
 </html>
