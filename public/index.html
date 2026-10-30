@@ -18,6 +18,8 @@
     <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
     <symbol id="i-photo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
     <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></symbol>
+    <symbol id="i-profile" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
   </svg>
 
   <!-- ========== ГЛАВНАЯ ========== -->
@@ -66,6 +68,18 @@
       </div>
       <div class="product-grid" id="product-grid"></div>
     </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-screen="home">
+        <svg width="24" height="24"><use href="#i-home"/></svg>
+        <span>Главная</span>
+      </button>
+      <button class="nav-btn" data-screen="profile">
+        <svg width="24" height="24"><use href="#i-profile"/></svg>
+        <span>Профиль</span>
+      </button>
+    </nav>
   </div>
 
   <!-- ========== ПРОФИЛЬ ========== -->
@@ -119,6 +133,18 @@
 
       <div class="orders-list" id="orders-list"></div>
     </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+      <button class="nav-btn" data-screen="home">
+        <svg width="24" height="24"><use href="#i-home"/></svg>
+        <span>Главная</span>
+      </button>
+      <button class="nav-btn active" data-screen="profile">
+        <svg width="24" height="24"><use href="#i-profile"/></svg>
+        <span>Профиль</span>
+      </button>
+    </nav>
   </div>
 
   <!-- ========== КАРТОЧКА ТОВАРА ========== -->
