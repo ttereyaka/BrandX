@@ -1,6 +1,16 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
+// Проверка хэша при загрузке
+if (window.location.hash === '#returns') {
+  showScreen('returns');
+}
 
+// Отслеживание изменения хэша
+window.addEventListener('hashchange', () => {
+  if (window.location.hash === '#returns') {
+    showScreen('returns');
+  }
+});
 let products = [];
 let categories = [
   { id: 'all', name: 'Все' },
