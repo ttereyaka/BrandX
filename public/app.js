@@ -407,7 +407,7 @@ async function submitReturn() {
     document.getElementById('preview-return-qr').style.display = 'none';
     returnFiles = { photo: null, qr: null };
     btn.disabled = true; btn.innerHTML = '<span>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ</span><span class="btn-arrow">→</span>';
-    showScreen('home');
+    showScreen('profile');
   } catch (err) {
     console.error('Ошибка:', err);
     alert('Произошла ошибка. Попробуйте ещё раз.');
