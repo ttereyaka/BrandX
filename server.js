@@ -1,240 +1,261 @@
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+const express = require('express');
+const multer = require('multer');
+const { Telegraf } = require('telegraf');
+const cors = require('cors');
+const crypto = require('crypto');
+const path = require('path');
+const fs = require('fs');
 
-:root {
-  --bg: #050505;
-  --bg-card: #111111;
-  --bg-card-hover: #1a1a1a;
-  --border: #222222;
-  --text: #ffffff;
-  --text-secondary: #a0a0a0;
-  --text-muted: #666666;
-  --accent: #ff7a45;
-  --accent-dim: rgba(255, 122, 69, 0.1);
-  --accent-border: rgba(255, 122, 69, 0.3);
-  --accent-red: #ff4d6d;
-  --green: #4ade80;
-  --font-display: 'Unbounded', sans-serif;
-  --font-body: 'Manrope', sans-serif;
+const app = express();
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const bot = new Telegraf(BOT_TOKEN);
+const ADMIN_ID = process.env.ADMIN_ID;
+const WEB_APP_URL = process.env.WEB_APP_URL || 'https://brandx-production-c65f.up.railway.app';
+
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+fs.mkdirSync(DATA_DIR, { recursive: true });
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+const STATUS = {
+  pending: 'В обработке', paid: 'Оплачено', shipped: 'В пути',
+  delivered: 'Получено', cancelled: 'Отменён'
+};
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const safe = path.basename(file.originalname).replace(/[^\w.\-]/g, '_');
+    cb(null, `order_${Date.now()}_${safe}`);
+  }
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+app.use(cors());
+app.use(express.json());
+
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+app.get('/', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
+
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const RETURNS_FILE = path.join(DATA_DIR, 'returns.json');
+
+const readJson = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return []; } };
+const writeJson = (f, data) => {
+  const tmp = f + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  fs.renameSync(tmp, f);
+};
+const loadOrders = () => readJson(ORDERS_FILE);
+const saveOrders = d => writeJson(ORDERS_FILE, d);
+const loadReturns = () => readJson(RETURNS_FILE);
+const saveReturns = d => writeJson(RETURNS_FILE, d);
+
+function verifyInitData(initData) {
+  try {
+    if (!initData || !BOT_TOKEN) return null;
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    params.delete('hash');
+    if (!hash) return null;
+    const dataCheck = [...params.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, v]) => `${k}=${v}`).join('\n');
+    const secret = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    const calc = crypto.createHmac('sha256', secret).update(dataCheck).digest('hex');
+    const a = Buffer.from(calc, 'hex'), b = Buffer.from(hash, 'hex');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    const age = Date.now() / 1000 - Number(params.get('auth_date') || 0);
+    if (age > 3 * 24 * 3600) return null;
+    return JSON.parse(params.get('user'));
+  } catch (e) { return null; }
 }
 
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-  padding-bottom: 80px; /* Отступ для нижней панели */
+const cleanup = files => files.filter(Boolean).forEach(f => fs.unlink(f, () => {}));
+
+app.post('/api/order', upload.fields([{ name: 'productPhoto' }, { name: 'qrCode' }]), async (req, res) => {
+  const productPhoto = req.files?.['productPhoto']?.[0]?.path;
+  const qrCode = req.files?.['qrCode']?.[0]?.path;
+  try {
+    const order = JSON.parse(req.body.order);
+    const user = verifyInitData(req.body.initData);
+    if (user) { order.userId = user.id; order.username = user.username; order.firstName = user.first_name; }
+
+    const orders = loadOrders();
+    orders.push({ ...order, date: new Date().toISOString(), status: 'pending' });
+    saveOrders(orders);
+
+    let message = ` <b>НОВАЯ ЗАЯВКА #${esc(order.orderId)}</b>\n\n`;
+    message += `📦 <b>Товар:</b> ${esc(order.product)}\n`;
+    message += `📏 <b>Размер:</b> ${esc(order.size)}\n`;
+    message += `📍 <b>ПВЗ:</b> ${esc(order.pvz)}\n`;
+    message += `🆔 <b>Трек:</b> ${esc(order.track || 'Не указан')}\n\n`;
+    message += `👤 <b>Клиент:</b> @${esc(order.username || 'неизвестно')}\n`;
+    message += `📱 <b>Имя:</b> ${esc(order.firstName || '—')}\n`;
+    message += `🆔 <b>ID:</b> ${esc(order.userId || '—')}\n\n`;
+    message += `Статус: /status ${esc(order.orderId)} paid`;
+
+    if (productPhoto) await bot.telegram.sendPhoto(ADMIN_ID, { source: productPhoto }, { caption: ` Фото для #${order.orderId}` });
+    if (qrCode) await bot.telegram.sendPhoto(ADMIN_ID, { source: qrCode }, { caption: message, parse_mode: 'HTML' });
+    else await bot.telegram.sendMessage(ADMIN_ID, message, { parse_mode: 'HTML' });
+
+    res.json({ success: true, orderId: order.orderId });
+  } catch (error) {
+    console.error('Ошибка заказа:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  } finally {
+    cleanup([productPhoto, qrCode]);
+  }
+});
+
+app.get('/api/orders', (req, res) => {
+  const user = verifyInitData(req.get('X-Init-Data'));
+  if (!user) return res.status(401).json({ error: 'Нет доступа' });
+  const orders = loadOrders()
+    .filter(o => Number(o.userId) === Number(user.id))
+    .reverse()
+    .map(o => ({
+      orderId: o.orderId, product: o.product, size: o.size, pvz: o.pvz,
+      price: o.price, image: o.image || '', track: o.track === 'Не указан' ? '' : (o.track || ''),
+      status: STATUS[o.status] || o.status, date: o.date
+    }));
+  res.json({ orders });
+});
+
+app.post('/api/return', upload.fields([{ name: 'productPhoto' }, { name: 'qrCode' }]), async (req, res) => {
+  const productPhoto = req.files?.['productPhoto']?.[0]?.path;
+  const qrCode = req.files?.['qrCode']?.[0]?.path;
+  try {
+    const ret = JSON.parse(req.body.return);
+    const user = verifyInitData(req.body.initData);
+    if (user) { ret.userId = user.id; ret.username = user.username; ret.firstName = user.first_name; }
+
+    const returns = loadReturns();
+    returns.push({ ...ret, date: new Date().toISOString(), status: 'pending' });
+    saveReturns(returns);
+
+    let message = `️ <b>ВОЗВРАТ #${esc(ret.returnId)}</b>\n\n`;
+    message += `📦 <b>Товар:</b> ${esc(ret.product)}\n`;
+    message += `🔢 <b>Заказ:</b> ${esc(ret.orderId)}\n`;
+    message += `❓ <b>Причина:</b> ${esc(ret.reason)}\n\n`;
+    message += ` <b>Адрес:</b> ${esc(ret.address)}\n`;
+    message += ` <b>Код выдачи:</b> ${esc(ret.pickupCode || 'Нет')}\n`;
+    message += `📱 <b>Телефон:</b> ${esc(ret.phone)}\n\n`;
+    message += ` <b>Клиент:</b> @${esc(ret.username || 'неизвестно')}`;
+
+    if (productPhoto) await bot.telegram.sendPhoto(ADMIN_ID, { source: productPhoto }, { caption: `📸 Фото возврата #${ret.returnId}` });
+    if (qrCode) await bot.telegram.sendPhoto(ADMIN_ID, { source: qrCode }, { caption: message, parse_mode: 'HTML' });
+    else await bot.telegram.sendMessage(ADMIN_ID, message, { parse_mode: 'HTML' });
+
+    res.json({ success: true, returnId: ret.returnId });
+  } catch (error) {
+    console.error('Ошибка возврата:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  } finally {
+    cleanup([productPhoto, qrCode]);
+  }
+});
+
+const isAdmin = ctx => String(ctx.from?.id) === String(ADMIN_ID);
+
+async function notifyClient(order, text) {
+  if (!order.userId) return;
+  try { await bot.telegram.sendMessage(order.userId, text, { parse_mode: 'HTML' }); } catch (e) {}
 }
 
-.screen { display: none; min-height: 100vh; animation: fadeIn 0.3s ease; }
-.screen.active { display: block; }
+bot.command('status', async ctx => {
+  if (!isAdmin(ctx)) return;
+  const [, id, st] = ctx.message.text.trim().split(/\s+/);
+  if (!id || !STATUS[st]) return ctx.reply('Формат: /status BX-123456 paid\nСтатусы: ' + Object.keys(STATUS).join(', '));
+  const orders = loadOrders();
+  const o = orders.find(x => x.orderId === id);
+  if (!o) return ctx.reply('Заказ не найден');
+  o.status = st;
+  saveOrders(orders);
+  await notifyClient(o, `📦 Заказ <b>#${esc(o.orderId)}</b>: ${STATUS[st]}`);
+  ctx.reply(`✅ #${id} → ${STATUS[st]}`);
+});
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+bot.command('track', async ctx => {
+  if (!isAdmin(ctx)) return;
+  const [, id, track] = ctx.message.text.trim().split(/\s+/);
+  if (!id || !track) return ctx.reply('Формат: /track BX-123456 5130008315');
+  const orders = loadOrders();
+  const o = orders.find(x => x.orderId === id);
+  if (!o) return ctx.reply('Заказ не найден');
+  o.track = track;
+  saveOrders(orders);
+  await notifyClient(o, `🚚 Заказ <b>#${esc(o.orderId)}</b>: трек-номер <code>${esc(track)}</code>`);
+  ctx.reply(`✅ Трек для #${id} сохранён`);
+});
 
-/* --- HEADER & HERO --- */
-.main-header { padding: 16px 16px 0; }
-.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.logo-wrap { display: flex; align-items: center; gap: 12px; }
-.logo-x { width: 44px; height: 44px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-.logo-letter { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: #000; line-height: 1; }
-.brand-name { font-family: var(--font-display); font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text); }
-.brand-tag { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+const orderLine = o => `${o.status === 'paid' ? '✅' : o.status === 'shipped' ? '🚚' : ''} #${esc(o.orderId)} — ${esc(o.product)} (${esc(o.size)}) — ${STATUS[o.status] || o.status}`;
 
-.online-badge { display: flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--accent-border); padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--accent); }
-.online-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 0 0 rgba(255, 122, 69, 0.7); animation: pulse 2s infinite; }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 122, 69, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(255, 122, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 122, 69, 0); } }
+bot.command('orders', async ctx => {
+  const userOrders = loadOrders().filter(o => Number(o.userId) === ctx.from.id);
+  if (!userOrders.length) {
+    return ctx.reply('У вас пока нет заказов. 🛍', {
+      reply_markup: { inline_keyboard: [[{ text: '🛍 Магазин', web_app: { url: WEB_APP_URL } }]] }
+    });
+  }
+  const msg = `📦 <b>Ваши заказы (${userOrders.length})</b>\n\n` + userOrders.slice(-5).reverse().map(orderLine).join('\n');
+  ctx.reply(msg, { parse_mode: 'HTML' });
+});
 
-.hero-banner { position: relative; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 122, 69, 0.08) 100%); border: 1px solid var(--accent-border); border-radius: 20px; padding: 28px 24px; margin-bottom: 16px; overflow: hidden; min-height: 220px; display: flex; align-items: flex-end; }
-.hero-pattern { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; overflow: hidden; }
-.pattern-x { position: absolute; font-family: var(--font-display); font-size: 120px; font-weight: 900; color: rgba(255, 122, 69, 0.04); line-height: 1; }
-.pattern-x { top: -20px; right: -10px; }
-.pattern-x-2 { top: 30px; right: 70px; font-size: 60px; opacity: 0.5; }
-.hero-content { position: relative; z-index: 2; }
-.hero-label { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
-.label-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
-.hero-title { font-family: var(--font-display); font-size: 32px; font-weight: 800; line-height: 1.1; color: var(--text); margin-bottom: 12px; }
-.accent-text { color: var(--accent); }
-.hero-sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 18px; line-height: 1.4; }
-.hero-cta { background: var(--accent); border: none; color: #000; padding: 12px 20px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: var(--font-body); letter-spacing: 1px; transition: transform 0.2s; }
-.hero-cta:active { transform: scale(0.95); }
+bot.command('returns', async ctx => {
+  const userReturns = loadReturns().filter(r => Number(r.userId) === ctx.from.id);
+  if (!userReturns.length) {
+    return ctx.reply('У вас пока нет заявок на возврат.', {
+      reply_markup: { inline_keyboard: [[{ text: '️ Оформить возврат', web_app: { url: WEB_APP_URL + '#returns' } }]] }
+    });
+  }
+  let msg = `↩️ <b>Ваши возвраты (${userReturns.length})</b>\n\n`;
+  userReturns.slice(-5).reverse().forEach(r => {
+    msg += `⏳ #${esc(r.returnId)} — ${esc(r.product)} — ${esc(r.reason)} — ${new Date(r.date).toLocaleDateString('ru-RU')}\n`;
+  });
+  ctx.reply(msg, { parse_mode: 'HTML' });
+});
 
-/* --- SEARCH & TABS --- */
-.search-box { position: relative; margin-bottom: 16px; }
-.search-box input { width: 100%; padding: 14px 16px 14px 46px; border: 1px solid var(--border); border-radius: 12px; font-size: 14px; font-family: var(--font-body); background: var(--bg-card); color: var(--text); outline: none; transition: all 0.2s; }
-.search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; stroke: var(--accent); }
+bot.command('support', ctx => ctx.reply(' Менеджер: @ttereuyaka\nРаботаем с 10:00 до 22:00 МСК'));
 
-.category-tabs { display: flex; gap: 8px; padding: 0 16px 16px; overflow-x: auto; scrollbar-width: none; }
-.category-tabs::-webkit-scrollbar { display: none; }
-.cat-tab { padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); transition: all 0.2s; }
-.cat-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+bot.command('shop', ctx => {
+  ctx.reply('Открываю магазин...', {
+    reply_markup: { inline_keyboard: [[{ text: ' Открыть', web_app: { url: WEB_APP_URL } }]] }
+  });
+});
 
-/* --- CATALOG --- */
-.catalog-section { padding: 0 16px 24px; }
-.catalog-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
-.catalog-label { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 2px; margin-bottom: 4px; }
-.catalog-title { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--text); }
-.catalog-count { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+bot.start(ctx => {
+  ctx.reply('Добро пожаловать в <b>BRAND X</b>! 🛍\nЭксклюзивный streetwear.', {
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: ' Открыть магазин', web_app: { url: WEB_APP_URL } }],
+        [{ text: '📦 Мои заказы', callback_data: 'orders' }, { text: '↩️ Возвраты', web_app: { url: WEB_APP_URL + '#returns' } }],
+        [{ text: '💬 Поддержка', callback_data: 'support' }]
+      ]
+    }
+  });
+});
 
-.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.prod-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.3s ease; position: relative; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
-.prod-card:active { transform: translateY(-2px) scale(0.98); border-color: var(--accent); box-shadow: 0 8px 24px rgba(255, 122, 69, 0.2); }
-.prod-img-wrap { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #111; }
-.prod-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-.prod-card:active .prod-img-wrap img { transform: scale(1.05); }
-.prod-badges { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 6px; }
-.badge { padding: 4px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; color: #000; backdrop-filter: blur(10px); box-shadow: 0 2px 8px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; }
-@keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-.badge-stock { background: var(--accent); }
-.badge-limited { background: var(--accent-red); color: #fff; }
-.prod-info { padding: 12px; }
-.prod-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
-.prod-price { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--accent); }
+bot.on('callback_query', async ctx => {
+  const data = ctx.callbackQuery.data;
+  if (data === 'orders') {
+    const userOrders = loadOrders().filter(o => Number(o.userId) === ctx.from.id);
+    if (!userOrders.length) await ctx.reply('Заказов пока нет.');
+    else await ctx.reply(`📦 <b>История:</b>\n` + userOrders.slice(-3).reverse().map(orderLine).join('\n'), { parse_mode: 'HTML' });
+  } else if (data === 'support') {
+    await ctx.reply('Пишите менеджеру: @ttereuyaka');
+  }
+  await ctx.answerCbQuery();
+});
 
-/* --- PRODUCT DETAILS --- */
-.product-top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-.back-btn-icon { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.product-top-title { font-size: 14px; font-weight: 700; color: var(--text); }
-.logo-x-small { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-.logo-letter-small { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #000; line-height: 1; }
-.product-image-wrap { position: relative; }
-.product-full-img { width: 100%; height: 340px; object-fit: cover; }
-.p-badges { position: absolute; top: 16px; left: 16px; display: flex; gap: 8px; }
-.p-badges .badge { font-size: 10px; padding: 6px 12px; }
-.product-details { padding: 20px 16px; }
-.p-category { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; }
-.p-title { font-family: var(--font-display); font-size: 24px; font-weight: 800; margin-bottom: 16px; line-height: 1.1; }
-.price-block { background: var(--bg-card); border: 1px solid var(--accent-border); border-radius: 14px; padding: 16px; margin-bottom: 20px; }
-.price-tag { display: flex; justify-content: space-between; align-items: center; }
-.price-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text-muted); }
-.price-value { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--accent); }
-.sizes-section { margin-bottom: 16px; }
-.sizes-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.sizes-title { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--text); }
-.sizes-hint { font-size: 12px; color: var(--text-muted); }
-.sizes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-.size-btn { min-width: 70px; padding: 12px 8px; border: 1px solid var(--border); border-radius: 10px; text-align: center; cursor: pointer; background: var(--bg-card); transition: all 0.2s; }
-.size-btn.active { border-color: var(--accent); background: var(--accent-dim); }
-.size-btn.disabled { opacity: 0.3; cursor: not-allowed; }
-.size-name { font-size: 14px; font-weight: 700; color: var(--text); }
-.size-stock { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-.stock-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.2); border-radius: 10px; margin-bottom: 16px; }
-.stock-bar.out { background: rgba(255, 77, 109, 0.1); border-color: rgba(255, 77, 109, 0.2); }
-.stock-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-.stock-bar.out .stock-dot { background: var(--accent-red); }
-.stock-text { font-size: 13px; color: var(--text); }
-.stock-text strong { display: block; font-size: 13px; font-weight: 700; }
+bot.launch().then(() => console.log('✅ Бот запущен')).catch(e => console.error('Бот не запустился:', e));
 
-/* --- BUTTONS --- */
-.btn-primary { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent) 0%, #ff6b35 100%); color: #000; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; font-family: var(--font-body); display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; letter-spacing: 1px; position: relative; overflow: hidden; box-shadow: 0 4px 16px rgba(255, 122, 69, 0.3); }
-.btn-primary::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s; }
-.btn-primary:active::before { left: 100%; }
-.btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
-.btn-primary:not(:disabled):active { transform: scale(0.98); }
-.btn-arrow { font-size: 16px; }
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Сервер на порту ${PORT}`));
 
-/* --- FORMS & UPLOADS --- */
-.form-block, .upload-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin: 16px; }
-.form-header, .upload-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.form-header h3, .upload-header h3 { font-size: 16px; font-weight: 700; color: var(--text); }
-.required-badge { background: rgba(255, 77, 109, 0.15); color: var(--accent-red); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
-.form-group { margin-bottom: 14px; }
-.form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; letter-spacing: 0.5px; }
-.form-input { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; font-family: var(--font-body); background: var(--bg); color: var(--text); outline: none; transition: all 0.2s; }
-.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); transform: translateY(-1px); }
-.form-input::placeholder { color: var(--text-muted); }
-.form-group select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a0' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; cursor: pointer; }
-.form-group select.form-input option { background: var(--bg-card); color: var(--text); }
-
-.upload-zone { display: block; border: 1px dashed var(--border); border-radius: 12px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg); }
-.upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: var(--accent-dim); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255, 122, 69, 0.15); }
-.upload-zone input { display: none; }
-.upload-icon-wrap { width: 52px; height: 52px; background: var(--accent-dim); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-.upload-text { font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
-.upload-formats { font-size: 11px; color: var(--text-muted); }
-.preview-img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; margin-top: 12px; border: 1px solid var(--border); }
-
-.info-note { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 12px; margin: 0 16px 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
-.info-icon { font-size: 18px; flex-shrink: 0; color: var(--accent); }
-
-/* --- SUCCESS SCREEN --- */
-.success-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; padding: 40px 24px; text-align: center; }
-.success-logo { margin-bottom: 20px; }
-.logo-letter-big { font-family: var(--font-display); font-size: 56px; font-weight: 800; color: var(--accent); line-height: 1; }
-.success-check { width: 64px; height: 64px; background: var(--accent); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; margin-bottom: 20px; }
-.success-title { font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-bottom: 12px; }
-.success-text { color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 20px; max-width: 280px; }
-.success-order-details { background: var(--bg-card); border: 1px solid var(--accent-border); border-radius: 14px; padding: 18px; margin: 20px 0; width: 100%; max-width: 320px; }
-.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.detail-row:last-child { border-bottom: none; }
-.detail-label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
-.detail-value { font-size: 14px; color: var(--text); font-weight: 700; text-align: right; max-width: 60%; }
-.success-order-id { background: var(--bg-card); border: 1px solid var(--accent-border); padding: 10px 20px; border-radius: 10px; font-size: 14px; color: var(--accent); font-weight: 700; margin-bottom: 24px; font-family: var(--font-display); letter-spacing: 2px; }
-
-/* --- PROFILE SCREEN --- */
-.profile-container { padding: 24px 16px 100px; }
-.profile-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-.profile-avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 2px solid var(--accent); }
-.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.profile-info h2 { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.profile-status { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
-.status-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; }
-
-.profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
-.stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 12px; }
-.balance-circle { position: relative; width: 100px; height: 100px; margin: 0 auto; }
-.balance-circle svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-.balance-circle .bg { fill: none; stroke: var(--border); stroke-width: 8; }
-.balance-circle .progress { fill: none; stroke: var(--accent); stroke-width: 8; stroke-dasharray: 251.2; stroke-dashoffset: 251.2; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
-.balance-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-.balance-amount { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text); }
-.balance-sub { font-size: 10px; color: var(--text-muted); }
-
-.period-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-.period-btn { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.period-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-.orders-count { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: var(--text); text-align: center; }
-
-.orders-filters { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-.orders-filters::-webkit-scrollbar { display: none; }
-.filter-btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-card); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-.filter-select { padding: 8px 32px 8px 12px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-card); color: var(--text); font-size: 12px; font-weight: 600; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23a0a0a0' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; }
-.filter-select option { background: var(--bg-card); }
-
-.orders-list { display: flex; flex-direction: column; gap: 12px; }
-.empty-orders { text-align: center; padding: 40px 20px; color: var(--text-muted); }
-.empty-orders svg { margin-bottom: 16px; opacity: 0.3; }
-.empty-orders p { margin-bottom: 16px; font-size: 14px; }
-.btn-small { padding: 10px 20px; background: var(--bg-card); border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
-
-.order-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; transition: all 0.2s; }
-.order-card:active { transform: scale(0.98); border-color: var(--accent-border); }
-.order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.order-id { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text); }
-.order-status { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
-.status-pending { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
-.status-paid, .status-shipped { background: rgba(74, 222, 128, 0.15); color: var(--green); }
-.status-delivered { background: rgba(255, 122, 69, 0.15); color: var(--accent); }
-.status-cancelled { background: rgba(255, 77, 109, 0.15); color: var(--accent-red); }
-
-.order-body { display: flex; gap: 12px; }
-.order-img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: #222; flex-shrink: 0; }
-.order-info { flex: 1; }
-.order-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; line-height: 1.3; }
-.order-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; }
-.order-price { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--accent); margin-top: 8px; }
-.order-track { font-size: 11px; color: var(--text-secondary); background: var(--bg); padding: 6px 10px; border-radius: 6px; margin-top: 8px; word-break: break-all; }
-
-/* --- BOTTOM NAV --- */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(17, 17, 17, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0 24px; z-index: 100; }
-.nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: var(--text-muted); cursor: pointer; transition: all 0.2s; width: 50%; }
-.nav-btn svg { width: 24px; height: 24px; transition: all 0.2s; }
-.nav-btn span { font-size: 11px; font-weight: 600; transition: all 0.2s; }
-.nav-btn.active { color: var(--accent); }
-.nav-btn.active svg { transform: translateY(-2px); }
-
-::-webkit-scrollbar { width: 0; }
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
