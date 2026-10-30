@@ -198,13 +198,13 @@ bot.start((ctx) => {
       reply_markup: {
         inline_keyboard: [
           [{ text: '🛍 Открыть магазин', web_app: { url: WEB_APP_URL } }],
-          [{ text: '📦 Мои заказы', callback_data: 'orders' }, { text: '💬 Поддержка', callback_data: 'support' }]
+          [{ text: '📦 Мои заказы', callback_data: 'orders' }, { text: '↩️ Возвраты', web_app: { url: WEB_APP_URL + '#returns' } }],
+          [{ text: '💬 Поддержка', callback_data: 'support' }]
         ]
       }
     }
   );
 });
-
 // Обработка callback кнопок
 bot.on('callback_query', async (ctx) => {
   const data = ctx.callbackQuery.data;
