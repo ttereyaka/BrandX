@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BRAND X</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <link rel="stylesheet" href="/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;800&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- ========== ГЛАВНАЯ ========== -->
+  <!-- ГЛАВНАЯ -->
   <div id="screen-home" class="screen active">
     <header class="main-header">
       <div class="header-top">
@@ -22,9 +21,7 @@
             <span class="brand-tag">streetwear • resale</span>
           </div>
         </div>
-        <button class="icon-btn" onclick="showScreen('profile')">
-          <span>👤</span>
-        </button>
+        <button class="icon-btn" onclick="showScreen('profile')">👤</button>
       </div>
 
       <div class="search-box">
@@ -41,17 +38,15 @@
 
     <nav class="bottom-nav">
       <button class="nav-btn active" onclick="showScreen('home')">
-        <span class="nav-icon">🏠</span>
-        <span>Главная</span>
+        <span class="nav-icon">🏠</span><span>Главная</span>
       </button>
       <button class="nav-btn" onclick="showScreen('profile')">
-        <span class="nav-icon">👤</span>
-        <span>Профиль</span>
+        <span class="nav-icon">👤</span><span>Профиль</span>
       </button>
     </nav>
   </div>
 
-  <!-- ========== КАРТОЧКА ТОВАРА ========== -->
+  <!-- КАРТОЧКА ТОВАРА -->
   <div id="screen-product" class="screen">
     <div class="product-overlay" onclick="showScreen('home')"></div>
     <div class="product-sheet">
@@ -78,14 +73,12 @@
           <div class="sizes-title">РАЗМЕР</div>
           <div class="sizes" id="p-sizes"></div>
         </div>
-        <button class="btn-primary" id="btn-buy" onclick="goToPayment()" disabled>
-          ОФОРМИТЬ ЗАЯВКУ →
-        </button>
+        <button class="btn-primary" id="btn-buy" onclick="goToPayment()" disabled>ОФОРМИТЬ ЗАЯВКУ →</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== ФОРМА ЗАЯВКИ ========== -->
+  <!-- ФОРМА ЗАЯВКИ -->
   <div id="screen-payment2" class="screen">
     <div class="form-screen">
       <div class="form-header-bar">
@@ -140,14 +133,12 @@
           <span>После отправки менеджер свяжется с вами для уточнения оплаты</span>
         </div>
 
-        <button class="btn-primary" id="btn-finish" onclick="submitApplication()" disabled>
-          ОТПРАВИТЬ ЗАЯВКУ →
-        </button>
+        <button class="btn-primary" id="btn-finish" onclick="submitApplication()" disabled>ОТПРАВИТЬ ЗАЯВКУ →</button>
       </div>
     </div>
   </div>
 
-  <!-- ========== УСПЕХ ========== -->
+  <!-- УСПЕХ -->
   <div id="screen-success" class="screen">
     <div class="success-wrap">
       <div class="success-check">✓</div>
@@ -163,7 +154,7 @@
     </div>
   </div>
 
-  <!-- ========== ПРОФИЛЬ ========== -->
+  <!-- ПРОФИЛЬ -->
   <div id="screen-profile" class="screen">
     <div class="profile-container">
       <div class="profile-header-card">
@@ -190,16 +181,13 @@
         </div>
       </div>
 
-      <!-- Мои заказы -->
       <div class="profile-section">
         <div class="section-header">
           <div class="section-title-small">МОИ ЗАКАЗЫ</div>
-          <button class="view-all-btn" onclick="showAllOrders()">Все →</button>
         </div>
         <div class="orders-list" id="orders-list"></div>
       </div>
 
-      <!-- Мои возвраты -->
       <div class="profile-section">
         <div class="section-header">
           <div class="section-title-small">МОИ ВОЗВРАТЫ</div>
@@ -208,7 +196,6 @@
         <div class="orders-list" id="returns-list"></div>
       </div>
 
-      <!-- Кнопки действий -->
       <div class="action-buttons">
         <button class="action-btn returns-btn" onclick="showScreen('returns')">
           <span class="action-icon">↩️</span>
@@ -217,7 +204,6 @@
             <div class="action-sub">Если товар не подошёл</div>
           </div>
         </button>
-
         <a href="https://t.me/managerbrandx" class="action-btn support-btn">
           <span class="action-icon">💬</span>
           <div class="action-text">
@@ -230,17 +216,15 @@
 
     <nav class="bottom-nav">
       <button class="nav-btn" onclick="showScreen('home')">
-        <span class="nav-icon">🏠</span>
-        <span>Главная</span>
+        <span class="nav-icon">🏠</span><span>Главная</span>
       </button>
       <button class="nav-btn active" onclick="showScreen('profile')">
-        <span class="nav-icon">👤</span>
-        <span>Профиль</span>
+        <span class="nav-icon">👤</span><span>Профиль</span>
       </button>
     </nav>
   </div>
 
-  <!-- ========== ВОЗВРАТ ========== -->
+  <!-- ВОЗВРАТ -->
   <div id="screen-returns" class="screen">
     <div class="form-screen">
       <div class="form-header-bar">
@@ -257,14 +241,12 @@
             <h3 style="color: #ff4d6d">Данные возврата</h3>
             <span class="required-badge">Обязательно</span>
           </div>
-
           <div class="form-group">
             <label class="form-label">Выберите заказ для возврата</label>
             <select id="return-order-select" class="form-input" onchange="fillReturnFromOrder()">
               <option value="">— Выберите заказ —</option>
             </select>
           </div>
-
           <div class="form-group">
             <label class="form-label">Причина возврата</label>
             <select id="return-reason" class="form-input">
@@ -275,25 +257,17 @@
               <option value="Другое">Другое</option>
             </select>
           </div>
-
           <div class="form-group">
             <label class="form-label">Адрес возврата (ПВЗ)</label>
             <input type="text" id="return-address" placeholder="Город, улица, дом" class="form-input">
           </div>
-
           <div class="form-group">
             <label class="form-label">Код выдачи (если есть)</label>
             <input type="text" id="return-pickup-code" placeholder="Код из СМС" class="form-input">
           </div>
-
           <div class="form-group">
             <label class="form-label">Телефон для связи</label>
             <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Комментарий (необязательно)</label>
-            <textarea id="return-comment" placeholder="Дополнительная информация" class="form-input" rows="3"></textarea>
           </div>
         </div>
 
@@ -317,9 +291,7 @@
           <span>Фото товара подтянется автоматически из вашего заказа</span>
         </div>
 
-        <button class="btn-primary btn-return" id="btn-return" onclick="submitReturn()" disabled>
-          ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ →
-        </button>
+        <button class="btn-primary btn-return" id="btn-return" onclick="submitReturn()" disabled>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ →</button>
       </div>
     </div>
   </div>
