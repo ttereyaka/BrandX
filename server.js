@@ -35,6 +35,7 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
@@ -54,7 +55,7 @@ const saveOrders = d => writeJson(ORDERS_FILE, d);
 const loadReturns = () => readJson(RETURNS_FILE);
 const saveReturns = d => writeJson(RETURNS_FILE, d);
 
-function verifyInitData(initData) {
+function verifyTelegramInitData(initData) {
   try {
     if (!initData || !BOT_TOKEN) return null;
     const params = new URLSearchParams(initData);
@@ -74,48 +75,90 @@ function verifyInitData(initData) {
   } catch (e) { return null; }
 }
 
+function requireAdmin(req, res, next) {
+  const initData = req.get('X-Init-Data');
+  const user = verifyTelegramInitData(initData);
+  if (!user || String(user.id) !== String(ADMIN_ID)) {
+    return res.status(403).json({ error: 'Доступ запрещён' });
+  }
+  req.adminUser = user;
+  next();
+}
+
 const cleanup = files => files.filter(Boolean).forEach(f => fs.unlink(f, () => {}));
 
-app.post('/api/order', upload.fields([{ name: 'productPhoto' }, { name: 'qrCode' }]), async (req, res) => {
-  const productPhoto = req.files?.['productPhoto']?.[0]?.path;
-  const qrCode = req.files?.['qrCode']?.[0]?.path;
+function getUserFromRequest(req) {
+  if (req.body.initData) {
+    const user = verifyTelegramInitData(req.body.initData);
+    if (user) { user.platform = 'telegram'; return user; }
+  }
+  if (req.body.platform === 'vk' && req.body.userId) {
+    return { id: req.body.userId, username: req.body.username, first_name: req.body.firstName, platform: 'vk' };
+  }
+  return null;
+}
+
+app.post('/api/order', upload.single('qrCode'), async (req, res) => {
+  const qrCode = req.file?.path;
   try {
     const order = JSON.parse(req.body.order);
-    const user = verifyInitData(req.body.initData);
-    if (user) { order.userId = user.id; order.username = user.username; order.firstName = user.first_name; }
+    const user = getUserFromRequest(req);
+    if (user) {
+      order.userId = user.id;
+      order.username = user.username;
+      order.firstName = user.first_name;
+      order.platform = user.platform;
+    }
 
     const orders = loadOrders();
     orders.push({ ...order, date: new Date().toISOString(), status: 'pending' });
     saveOrders(orders);
 
-    let message = ` <b>НОВАЯ ЗАЯВКА #${esc(order.orderId)}</b>\n\n`;
-    message += `📦 <b>Товар:</b> ${esc(order.product)}\n`;
-    message += `📏 <b>Размер:</b> ${esc(order.size)}\n`;
-    message += `📍 <b>ПВЗ:</b> ${esc(order.pvz)}\n`;
-    message += `🆔 <b>Трек:</b> ${esc(order.track || 'Не указан')}\n\n`;
-    message += `👤 <b>Клиент:</b> @${esc(order.username || 'неизвестно')}\n`;
-    message += `📱 <b>Имя:</b> ${esc(order.firstName || '—')}\n`;
-    message += `🆔 <b>ID:</b> ${esc(order.userId || '—')}\n\n`;
-    message += `Статус: /status ${esc(order.orderId)} paid`;
+    const platformIcon = order.platform === 'vk' ? '🔵' : '✈️';
+    const platformName = order.platform === 'vk' ? 'VK' : 'Telegram';
+    
+    const caption = `${platformIcon} <b>НОВАЯ ЗАЯВКА #${esc(order.orderId)}</b> [${platformName}]\n\n` +
+      `📦 <b>Товар:</b> ${esc(order.product)}\n` +
+      `📏 <b>Размер:</b> ${esc(order.size)}\n` +
+      `📍 <b>ПВЗ:</b> ${esc(order.pvz)}\n` +
+      `🆔 <b>Трек:</b> ${esc(order.track || 'Не указан')}\n\n` +
+      `👤 <b>Клиент:</b> @${esc(order.username || 'неизвестно')}\n` +
+      `📱 <b>Имя:</b> ${esc(order.firstName || '—')}\n` +
+      `🆔 <b>ID:</b> ${esc(order.userId || '—')}\n\n` +
+      `Статус: /status ${esc(order.orderId)} paid`;
 
-    if (productPhoto) await bot.telegram.sendPhoto(ADMIN_ID, { source: productPhoto }, { caption: ` Фото для #${order.orderId}` });
-    if (qrCode) await bot.telegram.sendPhoto(ADMIN_ID, { source: qrCode }, { caption: message, parse_mode: 'HTML' });
-    else await bot.telegram.sendMessage(ADMIN_ID, message, { parse_mode: 'HTML' });
+    if (order.image) {
+      try {
+        await bot.telegram.sendPhoto(ADMIN_ID, order.image, { caption: `📦 Фото товара для #${esc(order.orderId)}` });
+      } catch (e) { console.log('Не удалось отправить фото:', e.message); }
+    }
+    
+    if (qrCode) {
+      await bot.telegram.sendPhoto(ADMIN_ID, { source: qrCode }, { caption: caption, parse_mode: 'HTML' });
+    } else {
+      await bot.telegram.sendMessage(ADMIN_ID, caption, { parse_mode: 'HTML' });
+    }
 
     res.json({ success: true, orderId: order.orderId });
   } catch (error) {
     console.error('Ошибка заказа:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   } finally {
-    cleanup([productPhoto, qrCode]);
+    cleanup([qrCode]);
   }
 });
 
 app.get('/api/orders', (req, res) => {
-  const user = verifyInitData(req.get('X-Init-Data'));
-  if (!user) return res.status(401).json({ error: 'Нет доступа' });
+  let userId = null;
+  const tgInitData = req.get('X-Init-Data');
+  if (tgInitData) {
+    const user = verifyTelegramInitData(tgInitData);
+    if (user) userId = user.id;
+  }
+  if (!userId) return res.status(401).json({ error: 'Нет доступа' });
+  
   const orders = loadOrders()
-    .filter(o => Number(o.userId) === Number(user.id))
+    .filter(o => Number(o.userId) === Number(userId))
     .reverse()
     .map(o => ({
       orderId: o.orderId, product: o.product, size: o.size, pvz: o.pvz,
@@ -123,6 +166,25 @@ app.get('/api/orders', (req, res) => {
       status: STATUS[o.status] || o.status, date: o.date
     }));
   res.json({ orders });
+});
+
+app.get('/api/returns', (req, res) => {
+  let userId = null;
+  const tgInitData = req.get('X-Init-Data');
+  if (tgInitData) {
+    const user = verifyTelegramInitData(tgInitData);
+    if (user) userId = user.id;
+  }
+  if (!userId) return res.status(401).json({ error: 'Нет доступа' });
+  
+  const returns = loadReturns()
+    .filter(r => Number(r.userId) === Number(userId))
+    .reverse()
+    .map(r => ({
+      returnId: r.returnId, orderId: r.orderId, product: r.product,
+      reason: r.reason, status: STATUS[r.status] || r.status, date: r.date
+    }));
+  res.json({ returns });
 });
 
 app.post('/api/return', upload.single('qrCode'), async (req, res) => {
@@ -150,27 +212,17 @@ app.post('/api/return', upload.single('qrCode'), async (req, res) => {
       `❓ <b>Причина:</b> ${esc(ret.reason)}\n\n` +
       `📍 <b>Адрес возврата:</b> ${esc(ret.address)}\n` +
       `🔑 <b>Код выдачи:</b> ${esc(ret.pickupCode || 'Нет')}\n` +
-      `📱 <b>Телефон:</b> ${esc(ret.phone)}\n` +
-      (ret.comment ? `💬 <b>Комментарий:</b> ${esc(ret.comment)}\n` : '') +
-      `\n👤 <b>Клиент:</b> @${esc(ret.username || 'неизвестно')}\n` +
-      `🆔 <b>ID:</b> ${esc(ret.userId || '—')}`;
+      `📱 <b>Телефон:</b> ${esc(ret.phone)}\n\n` +
+      `👤 <b>Клиент:</b> @${esc(ret.username || 'неизвестно')}`;
 
-    // ОДНИМ СООБЩЕНИЕМ: фото товара + QR
-    const media = [];
     if (ret.image) {
-      media.push({
-        type: 'photo',
-        media: ret.image,
-        caption: caption,
-        parse_mode: 'HTML'
-      });
+      try {
+        await bot.telegram.sendPhoto(ADMIN_ID, ret.image, { caption: `📸 Фото товара для возврата #${esc(ret.returnId)}` });
+      } catch (e) {}
     }
+    
     if (qrCode) {
-      media.push({ type: 'photo', media: { source: qrCode } });
-    }
-
-    if (media.length > 0) {
-      await bot.telegram.sendMediaGroup(ADMIN_ID, media);
+      await bot.telegram.sendPhoto(ADMIN_ID, { source: qrCode }, { caption: caption, parse_mode: 'HTML' });
     } else {
       await bot.telegram.sendMessage(ADMIN_ID, caption, { parse_mode: 'HTML' });
     }
@@ -184,16 +236,73 @@ app.post('/api/return', upload.single('qrCode'), async (req, res) => {
   }
 });
 
+// === АДМИНКА (скрытая) ===
+app.get('/api/admin/stats', requireAdmin, (req, res) => {
+  const orders = loadOrders();
+  const returns = loadReturns();
+  res.json({ stats: {
+    totalOrders: orders.length,
+    pendingOrders: orders.filter(o => o.status === 'pending').length,
+    paidOrders: orders.filter(o => o.status === 'paid').length,
+    shippedOrders: orders.filter(o => o.status === 'shipped').length,
+    deliveredOrders: orders.filter(o => o.status === 'delivered').length,
+    totalReturns: returns.length,
+    pendingReturns: returns.filter(r => r.status === 'pending').length,
+    totalRevenue: orders.filter(o => o.status === 'paid' || o.status === 'shipped' || o.status === 'delivered').reduce((sum, o) => sum + (Number(o.price) || 0), 0)
+  }});
+});
+
+app.get('/api/admin/orders', requireAdmin, (req, res) => {
+  res.json({ orders: loadOrders().reverse() });
+});
+
+app.get('/api/admin/returns', requireAdmin, (req, res) => {
+  res.json({ returns: loadReturns().reverse() });
+});
+
+app.post('/api/admin/order-status', requireAdmin, (req, res) => {
+  const { orderId, status } = req.body;
+  if (!orderId || !STATUS[status]) return res.status(400).json({ error: 'Неверные данные' });
+  const orders = loadOrders();
+  const order = orders.find(o => o.orderId === orderId);
+  if (!order) return res.status(404).json({ error: 'Заказ не найден' });
+  order.status = status;
+  saveOrders(orders);
+  if (order.userId && order.platform === 'telegram') {
+    try { bot.telegram.sendMessage(order.userId, `📦 Заказ <b>#${esc(order.orderId)}</b>: ${STATUS[status]}`, { parse_mode: 'HTML' }); } catch (e) {}
+  }
+  res.json({ success: true });
+});
+
+app.post('/api/admin/order-track', requireAdmin, (req, res) => {
+  const { orderId, track } = req.body;
+  if (!orderId || !track) return res.status(400).json({ error: 'Неверные данные' });
+  const orders = loadOrders();
+  const order = orders.find(o => o.orderId === orderId);
+  if (!order) return res.status(404).json({ error: 'Заказ не найден' });
+  order.track = track;
+  saveOrders(orders);
+  if (order.userId && order.platform === 'telegram') {
+    try { bot.telegram.sendMessage(order.userId, `🚚 Заказ <b>#${esc(order.orderId)}</b>: трек-номер <code>${esc(track)}</code>`, { parse_mode: 'HTML' }); } catch (e) {}
+  }
+  res.json({ success: true });
+});
+
+// === КОМАНДЫ БОТА ===
+const isAdmin = ctx => String(ctx.from?.id) === String(ADMIN_ID);
+
 bot.command('status', async ctx => {
   if (!isAdmin(ctx)) return;
   const [, id, st] = ctx.message.text.trim().split(/\s+/);
-  if (!id || !STATUS[st]) return ctx.reply('Формат: /status BX-123456 paid\nСтатусы: ' + Object.keys(STATUS).join(', '));
+  if (!id || !STATUS[st]) return ctx.reply('Формат: /status BX-123456 paid');
   const orders = loadOrders();
   const o = orders.find(x => x.orderId === id);
   if (!o) return ctx.reply('Заказ не найден');
   o.status = st;
   saveOrders(orders);
-  await notifyClient(o, `📦 Заказ <b>#${esc(o.orderId)}</b>: ${STATUS[st]}`);
+  if (o.userId && o.platform === 'telegram') {
+    try { await bot.telegram.sendMessage(o.userId, `📦 Заказ <b>#${esc(o.orderId)}</b>: ${STATUS[st]}`, { parse_mode: 'HTML' }); } catch (e) {}
+  }
   ctx.reply(`✅ #${id} → ${STATUS[st]}`);
 });
 
@@ -206,11 +315,18 @@ bot.command('track', async ctx => {
   if (!o) return ctx.reply('Заказ не найден');
   o.track = track;
   saveOrders(orders);
-  await notifyClient(o, `🚚 Заказ <b>#${esc(o.orderId)}</b>: трек-номер <code>${esc(track)}</code>`);
+  if (o.userId && o.platform === 'telegram') {
+    try { await bot.telegram.sendMessage(o.userId, `🚚 Заказ <b>#${esc(o.orderId)}</b>: трек-номер <code>${esc(track)}</code>`, { parse_mode: 'HTML' }); } catch (e) {}
+  }
   ctx.reply(`✅ Трек для #${id} сохранён`);
 });
 
-const orderLine = o => `${o.status === 'paid' ? '✅' : o.status === 'shipped' ? '🚚' : ''} #${esc(o.orderId)} — ${esc(o.product)} (${esc(o.size)}) — ${STATUS[o.status] || o.status}`;
+bot.command('admin', ctx => {
+  if (!isAdmin(ctx)) return;
+  ctx.reply(`🔐 Админ-панель:\n${WEB_APP_URL}/x-admin-panel-2026-secret.html`, { parse_mode: 'HTML' });
+});
+
+const orderLine = o => `${o.status === 'paid' ? '✅' : o.status === 'shipped' ? '🚚' : '⏳'} #${esc(o.orderId)} — ${esc(o.product)} (${esc(o.size)}) — ${STATUS[o.status] || o.status}`;
 
 bot.command('orders', async ctx => {
   const userOrders = loadOrders().filter(o => Number(o.userId) === ctx.from.id);
@@ -227,7 +343,7 @@ bot.command('returns', async ctx => {
   const userReturns = loadReturns().filter(r => Number(r.userId) === ctx.from.id);
   if (!userReturns.length) {
     return ctx.reply('У вас пока нет заявок на возврат.', {
-      reply_markup: { inline_keyboard: [[{ text: '️ Оформить возврат', web_app: { url: WEB_APP_URL + '#returns' } }]] }
+      reply_markup: { inline_keyboard: [[{ text: '↩️ Оформить возврат', web_app: { url: WEB_APP_URL + '#returns' } }]] }
     });
   }
   let msg = `↩️ <b>Ваши возвраты (${userReturns.length})</b>\n\n`;
@@ -241,7 +357,7 @@ bot.command('support', ctx => ctx.reply('💬 Менеджер: @managerbrandx\n
 
 bot.command('shop', ctx => {
   ctx.reply('Открываю магазин...', {
-    reply_markup: { inline_keyboard: [[{ text: ' Открыть', web_app: { url: WEB_APP_URL } }]] }
+    reply_markup: { inline_keyboard: [[{ text: '🛍 Открыть', web_app: { url: WEB_APP_URL } }]] }
   });
 });
 
@@ -250,7 +366,7 @@ bot.start(ctx => {
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
-        [{ text: ' Открыть магазин', web_app: { url: WEB_APP_URL } }],
+        [{ text: '🛍 Открыть магазин', web_app: { url: WEB_APP_URL } }],
         [{ text: '📦 Мои заказы', callback_data: 'orders' }, { text: '↩️ Возвраты', web_app: { url: WEB_APP_URL + '#returns' } }],
         [{ text: '💬 Поддержка', callback_data: 'support' }]
       ]
@@ -265,12 +381,12 @@ bot.on('callback_query', async ctx => {
     if (!userOrders.length) await ctx.reply('Заказов пока нет.');
     else await ctx.reply(`📦 <b>История:</b>\n` + userOrders.slice(-3).reverse().map(orderLine).join('\n'), { parse_mode: 'HTML' });
   } else if (data === 'support') {
-    await ctx.reply('Пишите менеджеру: @ttereuyaka');
+    await ctx.reply('Пишите менеджеру: @managerbrandx');
   }
   await ctx.answerCbQuery();
 });
 
-bot.launch().then(() => console.log('✅ Бот запущен')).catch(e => console.error('Бот не запустился:', e));
+bot.launch().then(() => console.log('✅ Telegram бот запущен')).catch(e => console.error('Бот не запустился:', e));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Сервер на порту ${PORT}`));
