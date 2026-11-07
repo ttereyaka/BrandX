@@ -125,46 +125,64 @@ app.get('/api/orders', (req, res) => {
   res.json({ orders });
 });
 
-app.post('/api/return', upload.fields([{ name: 'productPhoto' }, { name: 'qrCode' }]), async (req, res) => {
-  const productPhoto = req.files?.['productPhoto']?.[0]?.path;
-  const qrCode = req.files?.['qrCode']?.[0]?.path;
+app.post('/api/return', upload.single('qrCode'), async (req, res) => {
+  const qrCode = req.file?.path;
   try {
     const ret = JSON.parse(req.body.return);
-    const user = verifyInitData(req.body.initData);
-    if (user) { ret.userId = user.id; ret.username = user.username; ret.firstName = user.first_name; }
+    const user = getUserFromRequest(req);
+    if (user) {
+      ret.userId = user.id;
+      ret.username = user.username;
+      ret.firstName = user.first_name;
+      ret.platform = user.platform;
+    }
 
     const returns = loadReturns();
     returns.push({ ...ret, date: new Date().toISOString(), status: 'pending' });
     saveReturns(returns);
 
-    let message = `️ <b>ВОЗВРАТ #${esc(ret.returnId)}</b>\n\n`;
-    message += `📦 <b>Товар:</b> ${esc(ret.product)}\n`;
-    message += `🔢 <b>Заказ:</b> ${esc(ret.orderId)}\n`;
-    message += `❓ <b>Причина:</b> ${esc(ret.reason)}\n\n`;
-    message += ` <b>Адрес:</b> ${esc(ret.address)}\n`;
-    message += ` <b>Код выдачи:</b> ${esc(ret.pickupCode || 'Нет')}\n`;
-    message += `📱 <b>Телефон:</b> ${esc(ret.phone)}\n\n`;
-    message += ` <b>Клиент:</b> @${esc(ret.username || 'неизвестно')}`;
+    const platformIcon = ret.platform === 'vk' ? '🔵' : '✈️';
+    const platformName = ret.platform === 'vk' ? 'VK' : 'Telegram';
+    
+    const caption = `${platformIcon} <b>ВОЗВРАТ #${esc(ret.returnId)}</b> [${platformName}]\n\n` +
+      `📦 <b>Товар:</b> ${esc(ret.product)}\n` +
+      `🔢 <b>Заказ:</b> ${esc(ret.orderId)}\n` +
+      `❓ <b>Причина:</b> ${esc(ret.reason)}\n\n` +
+      `📍 <b>Адрес возврата:</b> ${esc(ret.address)}\n` +
+      `🔑 <b>Код выдачи:</b> ${esc(ret.pickupCode || 'Нет')}\n` +
+      `📱 <b>Телефон:</b> ${esc(ret.phone)}\n` +
+      (ret.comment ? `💬 <b>Комментарий:</b> ${esc(ret.comment)}\n` : '') +
+      `\n👤 <b>Клиент:</b> @${esc(ret.username || 'неизвестно')}\n` +
+      `🆔 <b>ID:</b> ${esc(ret.userId || '—')}`;
 
-    if (productPhoto) await bot.telegram.sendPhoto(ADMIN_ID, { source: productPhoto }, { caption: `📸 Фото возврата #${ret.returnId}` });
-    if (qrCode) await bot.telegram.sendPhoto(ADMIN_ID, { source: qrCode }, { caption: message, parse_mode: 'HTML' });
-    else await bot.telegram.sendMessage(ADMIN_ID, message, { parse_mode: 'HTML' });
+    // ОДНИМ СООБЩЕНИЕМ: фото товара + QR
+    const media = [];
+    if (ret.image) {
+      media.push({
+        type: 'photo',
+        media: ret.image,
+        caption: caption,
+        parse_mode: 'HTML'
+      });
+    }
+    if (qrCode) {
+      media.push({ type: 'photo', media: { source: qrCode } });
+    }
+
+    if (media.length > 0) {
+      await bot.telegram.sendMediaGroup(ADMIN_ID, media);
+    } else {
+      await bot.telegram.sendMessage(ADMIN_ID, caption, { parse_mode: 'HTML' });
+    }
 
     res.json({ success: true, returnId: ret.returnId });
   } catch (error) {
     console.error('Ошибка возврата:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   } finally {
-    cleanup([productPhoto, qrCode]);
+    cleanup([qrCode]);
   }
 });
-
-const isAdmin = ctx => String(ctx.from?.id) === String(ADMIN_ID);
-
-async function notifyClient(order, text) {
-  if (!order.userId) return;
-  try { await bot.telegram.sendMessage(order.userId, text, { parse_mode: 'HTML' }); } catch (e) {}
-}
 
 bot.command('status', async ctx => {
   if (!isAdmin(ctx)) return;
@@ -219,7 +237,7 @@ bot.command('returns', async ctx => {
   ctx.reply(msg, { parse_mode: 'HTML' });
 });
 
-bot.command('support', ctx => ctx.reply(' Менеджер: @ttereuyaka\nРаботаем с 10:00 до 22:00 МСК'));
+bot.command('support', ctx => ctx.reply('💬 Менеджер: @managerbrandx\nРаботаем с 10:00 до 22:00 МСК'));
 
 bot.command('shop', ctx => {
   ctx.reply('Открываю магазин...', {
