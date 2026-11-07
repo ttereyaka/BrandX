@@ -1,31 +1,8 @@
-// Определяем платформу
-var platform = 'unknown';
-var currentUser = null;
+// Telegram Web App
+var tg = window.Telegram.WebApp;
+tg.expand();
 
-if (window.Telegram && window.Telegram.WebApp) {
-  platform = 'telegram';
-  var tg = window.Telegram.WebApp;
-  tg.expand();
-  currentUser = tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
-}
-
-if (window.vkBridge) {
-  platform = 'vk';
-  vkBridge.send('VKWebAppInit').then(function() {
-    return vkBridge.send('VKWebAppGetUserInfo');
-  }).then(function(data) {
-    currentUser = {
-      id: data.id,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      username: data.screen_name,
-      photo_url: data.photo_100
-    };
-    loadData();
-  }).catch(function() {
-    loadData();
-  });
-}
+var currentUser = tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
 
 var products = [];
 var categories = [
@@ -50,46 +27,30 @@ var SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 var SHEET_NAME = 'Лист10';
 var SERVER_URL = 'https://brandx-production-c65f.up.railway.app';
 
+// Проверяем хэш при загрузке
 if (window.location.hash === '#returns') {
-  showScreen('returns');
+  // Ждём загрузки данных, потом откроем
 }
 
-function getAuthData() {
-  var data = {};
-  if (platform === 'telegram') {
-    data.initData = tg.initData;
-    data.platform = 'telegram';
-  } else if (platform === 'vk') {
-    data.platform = 'vk';
-    data.userId = currentUser ? currentUser.id : null;
-    data.username = currentUser ? currentUser.username : null;
-    data.firstName = currentUser ? currentUser.first_name : null;
-  }
-  return data;
-}
-
-function getHeaders() {
-  var authData = getAuthData();
-  var headers = {};
-  if (platform === 'telegram') headers['X-Init-Data'] = authData.initData;
-  else if (platform === 'vk') {
-    headers['X-Platform'] = 'vk';
-    headers['X-User-Id'] = authData.userId;
-  }
-  return headers;
-}
-
+// Загрузка товаров из Google Sheets
 function loadData() {
+  console.log('Загружаем данные из таблицы...');
+  
   var url = 'https://opensheet.elk.sh/' + SHEET_ID + '/' + encodeURIComponent(SHEET_NAME);
+  
   fetch(url)
     .then(function(response) {
-      if (!response.ok) throw new Error('Ошибка');
+      if (!response.ok) throw new Error('Ошибка загрузки');
       return response.json();
     })
     .then(function(rawData) {
+      console.log('Получено строк:', rawData.length);
+      
       products = [];
+      
       for (var i = 0; i < rawData.length; i++) {
         var row = rawData[i];
+        
         var sizes = {};
         if (row.s !== undefined && row.s !== '') sizes['S'] = Number(row.s) || 0;
         if (row.m !== undefined && row.m !== '') sizes['M'] = Number(row.m) || 0;
@@ -114,24 +75,33 @@ function loadData() {
           limited: isLimited
         });
       }
+      
+      console.log('Товаров загружено:', products.length);
       renderCategories();
       renderProducts();
     })
     .catch(function(error) {
-      console.error('Ошибка:', error);
+      console.error('Ошибка загрузки:', error);
     });
 }
 
+// Переключение экранов
 function showScreen(name) {
   var screens = document.querySelectorAll('.screen');
-  for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
+  for (var i = 0; i < screens.length; i++) {
+    screens[i].classList.remove('active');
+  }
   var target = document.getElementById('screen-' + name);
   if (target) target.classList.add('active');
 
   var navBtns = document.querySelectorAll('.nav-btn');
-  for (var i = 0; i < navBtns.length; i++) navBtns[i].classList.remove('active');
+  for (var i = 0; i < navBtns.length; i++) {
+    navBtns[i].classList.remove('active');
+  }
   var activeBtns = document.querySelectorAll('.nav-btn[onclick="showScreen(\'' + name + '\')"]');
-  for (var i = 0; i < activeBtns.length; i++) activeBtns[i].classList.add('active');
+  for (var i = 0; i < activeBtns.length; i++) {
+    activeBtns[i].classList.add('active');
+  }
 
   window.scrollTo(0, 0);
 
@@ -139,6 +109,7 @@ function showScreen(name) {
   if (name === 'returns') loadReturnsDropdown();
 }
 
+// Загрузка профиля
 function loadProfile() {
   if (currentUser) {
     var fullName = currentUser.first_name || 'Гость';
@@ -150,10 +121,12 @@ function loadProfile() {
   loadUserData();
 }
 
+// Загрузка заказов и возвратов
 function loadUserData() {
-  var headers = getHeaders();
+  var headers = {};
+  if (tg.initData) headers['X-Init-Data'] = tg.initData;
 
-  // Загружаем заказы
+  // Заказы
   fetch(SERVER_URL + '/api/orders', { headers: headers })
     .then(function(response) {
       if (!response.ok) throw new Error('Ошибка');
@@ -168,7 +141,7 @@ function loadUserData() {
       console.error('Ошибка заказов:', error);
     });
 
-  // Загружаем возвраты
+  // Возвраты
   fetch(SERVER_URL + '/api/returns', { headers: headers })
     .then(function(response) {
       if (!response.ok) throw new Error('Ошибка');
@@ -184,6 +157,7 @@ function loadUserData() {
     });
 }
 
+// Отрисовка заказов
 function renderOrders(orders) {
   var list = document.getElementById('orders-list');
   if (!list) return;
@@ -216,6 +190,7 @@ function renderOrders(orders) {
   list.innerHTML = html;
 }
 
+// Отрисовка возвратов
 function renderReturns(returns) {
   var list = document.getElementById('returns-list');
   if (!list) return;
@@ -244,6 +219,7 @@ function renderReturns(returns) {
   list.innerHTML = html;
 }
 
+// Категории
 function renderCategories() {
   var tabs = document.getElementById('category-tabs');
   var html = '';
@@ -313,6 +289,7 @@ function renderProducts() {
 
 function filterProducts() { renderProducts(); }
 
+// Открытие карточки товара
 function openProduct(id) {
   currentProduct = null;
   for (var i = 0; i < products.length; i++) {
@@ -377,6 +354,7 @@ function goToPayment() {
   showScreen('payment2');
 }
 
+// Загрузка QR-кода
 function handleFile(input, type) {
   var file = input.files[0];
   if (!file) return;
@@ -397,6 +375,7 @@ function checkFormValid() {
   btn.disabled = !(pvz && uploadedFiles.qr);
 }
 
+// Отправка заявки
 function submitApplication() {
   var product = document.getElementById('form-product').value.trim();
   var pvz = document.getElementById('form-pvz').value.trim();
@@ -412,27 +391,21 @@ function submitApplication() {
   btn.innerHTML = 'ОТПРАВКА...';
 
   var orderId = 'BX-' + Date.now().toString().slice(-6);
-  var authData = getAuthData();
 
   var orderData = {
     orderId: orderId, product: product, pvz: pvz, size: size,
     track: track || 'Не указан',
     price: currentProduct ? currentProduct.price : 0,
     image: currentProduct ? currentProduct.image : '',
-    platform: platform,
-    userId: authData.userId || (currentUser ? currentUser.id : null),
-    username: authData.username || (currentUser ? currentUser.username : null),
-    firstName: authData.firstName || (currentUser ? currentUser.first_name : null)
+    userId: currentUser ? currentUser.id : null,
+    username: currentUser ? currentUser.username : null,
+    firstName: currentUser ? currentUser.first_name : null
   };
 
   var formData = new FormData();
   formData.append('order', JSON.stringify(orderData));
   formData.append('qrCode', uploadedFiles.qr);
-  if (platform === 'telegram') formData.append('initData', tg.initData);
-  else if (platform === 'vk') {
-    formData.append('platform', 'vk');
-    formData.append('userId', currentUser ? currentUser.id : '');
-  }
+  formData.append('initData', tg.initData);
 
   fetch(SERVER_URL + '/api/order', { method: 'POST', body: formData })
     .then(function(response) {
@@ -481,7 +454,6 @@ function fillReturnFromOrder() {
   var selected = select.options[select.selectedIndex];
   if (!selected || !selected.value) return;
 
-  document.getElementById('return-product').value = selected.dataset.product || '';
   document.getElementById('return-address').value = selected.dataset.pvz || '';
   checkReturnFormValid();
 }
@@ -515,13 +487,11 @@ function submitReturn() {
   var address = document.getElementById('return-address').value.trim();
   var pickupCode = document.getElementById('return-pickup-code').value.trim();
   var phone = document.getElementById('return-phone').value.trim();
-  var comment = document.getElementById('return-comment').value.trim();
 
   if (!orderId || !reason || !address || !phone || !returnFiles.qr) {
     alert('Заполните все обязательные поля и загрузите QR'); return;
   }
 
-  // Находим заказ и берём из него данные
   var order = null;
   for (var i = 0; i < allUserOrders.length; i++) {
     if (allUserOrders[i].orderId === orderId) { order = allUserOrders[i]; break; }
@@ -533,7 +503,6 @@ function submitReturn() {
   btn.innerHTML = 'ОТПРАВКА...';
 
   var returnId = 'RET-' + Date.now().toString().slice(-6);
-  var authData = getAuthData();
 
   var returnData = {
     returnId: returnId,
@@ -544,21 +513,15 @@ function submitReturn() {
     address: address,
     pickupCode: pickupCode || 'Нет',
     phone: phone,
-    comment: comment,
-    platform: platform,
-    userId: authData.userId || (currentUser ? currentUser.id : null),
-    username: authData.username || (currentUser ? currentUser.username : null),
-    firstName: authData.firstName || (currentUser ? currentUser.first_name : null)
+    userId: currentUser ? currentUser.id : null,
+    username: currentUser ? currentUser.username : null,
+    firstName: currentUser ? currentUser.first_name : null
   };
 
   var formData = new FormData();
   formData.append('return', JSON.stringify(returnData));
   formData.append('qrCode', returnFiles.qr);
-  if (platform === 'telegram') formData.append('initData', tg.initData);
-  else if (platform === 'vk') {
-    formData.append('platform', 'vk');
-    formData.append('userId', currentUser ? currentUser.id : '');
-  }
+  formData.append('initData', tg.initData);
 
   fetch(SERVER_URL + '/api/return', { method: 'POST', body: formData })
     .then(function(response) {
@@ -572,7 +535,6 @@ function submitReturn() {
       document.getElementById('return-address').value = '';
       document.getElementById('return-pickup-code').value = '';
       document.getElementById('return-phone').value = '';
-      document.getElementById('return-comment').value = '';
       document.getElementById('preview-return-qr').style.display = 'none';
       returnFiles = { qr: null };
       btn.disabled = true;
@@ -586,13 +548,14 @@ function submitReturn() {
     });
 }
 
+// Обработчики событий
 document.addEventListener('DOMContentLoaded', function() {
   var formFields = ['form-pvz', 'form-track'];
   for (var i = 0; i < formFields.length; i++) {
     var el = document.getElementById(formFields[i]);
     if (el) el.addEventListener('input', checkFormValid);
   }
-  var returnFields = ['return-order-select', 'return-reason', 'return-address', 'return-pickup-code', 'return-phone', 'return-comment'];
+  var returnFields = ['return-order-select', 'return-reason', 'return-address', 'return-pickup-code', 'return-phone'];
   for (var i = 0; i < returnFields.length; i++) {
     var el = document.getElementById(returnFields[i]);
     if (el) {
@@ -602,5 +565,5 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Загружаем данные в любом случае
+// Запускаем загрузку данных
 loadData();
