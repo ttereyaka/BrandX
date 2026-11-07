@@ -18,21 +18,40 @@
           <div class="logo-circle"><span class="logo-letter">X</span></div>
           <div class="brand-info">
             <span class="brand-name">BRAND X</span>
-            <span class="brand-tag">streetwear • resale</span>
+            <span class="brand-tag">STREETWEAR • RESALE</span>
           </div>
         </div>
-        <button class="icon-btn" onclick="showScreen('profile')">👤</button>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          <span>LIVE</span>
+        </div>
+      </div>
+
+      <div class="hero-banner">
+        <div class="hero-content">
+          <div class="hero-label">NEW DROP 2026</div>
+          <h1 class="hero-title">ЗАРАБАТЫВАЙ<br>С <span class="accent-text">BRAND X</span></h1>
+          <p class="hero-sub">Новый дроп уже в каталоге</p>
+          <button class="hero-cta" onclick="document.getElementById('catalog-section').scrollIntoView({behavior:'smooth'})">СМОТРЕТЬ КАТАЛОГ →</button>
+        </div>
       </div>
 
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Поиск по названию или бренду" id="search-input" oninput="filterProducts()">
+        <input type="text" placeholder="Найти дроп..." id="search-input" oninput="filterProducts()">
       </div>
     </header>
 
     <div class="category-tabs" id="category-tabs"></div>
 
-    <div class="catalog-section">
+    <div class="catalog-section" id="catalog-section">
+      <div class="catalog-header">
+        <div>
+          <div class="catalog-label">// КАТАЛОГ</div>
+          <h2 class="catalog-title">Хайп коллекция</h2>
+        </div>
+        <div class="catalog-count" id="catalog-count">0 items</div>
+      </div>
       <div class="product-grid" id="product-grid"></div>
     </div>
 
