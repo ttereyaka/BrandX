@@ -2,369 +2,328 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BRAND X - Магазин одежды</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BRAND X</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <link rel="stylesheet" href="/style.css">
-
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;800&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-
+  <!-- ========== ГЛАВНАЯ ========== -->
   <div id="screen-home" class="screen active">
-  
- 
     <header class="main-header">
       <div class="header-top">
         <div class="logo-wrap">
-          <div class="logo-x"><span class="logo-letter">X</span></div>
+          <div class="logo-circle"><span class="logo-letter">X</span></div>
           <div class="brand-info">
             <span class="brand-name">BRAND X</span>
             <span class="brand-tag">streetwear • resale</span>
           </div>
         </div>
-        <div class="online-badge">
-          <span class="online-dot"></span>
-          <span>LIVE</span>
-        </div>
+        <button class="icon-btn" onclick="showScreen('profile')">
+          <span>👤</span>
+        </button>
       </div>
 
-      <!-- Большой баннер -->
-      <div class="hero-banner">
-        <div class="hero-pattern">
-          <div class="pattern-x">X</div>
-          <div class="pattern-x pattern-x-2">X</div>
-          <div class="pattern-x pattern-x-3">X</div>
-        </div>
-        <div class="hero-content">
-          <div class="hero-label">
-            <span class="label-dot"></span>
-            NEW DROP 2026
-          </div>
-          <h1 class="hero-title">ЗАРАБАТЫВАЙ<br>С <span class="accent-text">BRAND X</span></h1>
-          <p class="hero-sub">Новый дроп уже в каталоге</p>
-          <button class="hero-cta" onclick="scrollToCatalog()">СМОТРЕТЬ КАТАЛОГ →</button>
-        </div>
-      </div>
-
-      <!-- Поиск -->
       <div class="search-box">
-        <input type="text" placeholder="Найти дроп..." id="search-input" oninput="filterProducts()">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Поиск по названию или бренду" id="search-input" oninput="filterProducts()">
       </div>
     </header>
 
-    <!-- Вкладки категорий -->
     <div class="category-tabs" id="category-tabs"></div>
 
-    <!-- Каталог товаров -->
-    <div class="catalog-section" id="catalog-section">
-      <div class="catalog-header">
-        <div>
-          <div class="catalog-label">// КАТАЛОГ</div>
-          <h2 class="catalog-title">Хайп коллекция</h2>
-        </div>
-        <div class="catalog-count" id="catalog-count">0 товаров</div>
-      </div>
+    <div class="catalog-section">
       <div class="product-grid" id="product-grid"></div>
     </div>
 
-    <!-- Нижнее меню -->
     <nav class="bottom-nav">
       <button class="nav-btn active" onclick="showScreen('home')">
-        <span>🏠 Главная</span>
+        <span class="nav-icon">🏠</span>
+        <span>Главная</span>
       </button>
       <button class="nav-btn" onclick="showScreen('profile')">
-        <span>👤 Профиль</span>
+        <span class="nav-icon">👤</span>
+        <span>Профиль</span>
       </button>
     </nav>
   </div>
 
-  <!-- ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ -->
-  <div id="screen-profile" class="screen">
-    <div class="profile-container">
-      
-      <!-- Аватар и имя -->
-      <div class="profile-header">
-        <div class="profile-avatar">
-          <img id="profile-photo" src="https://via.placeholder.com/100/ff7a45/000000?text=X" alt="Аватар">
+  <!-- ========== КАРТОЧКА ТОВАРА ========== -->
+  <div id="screen-product" class="screen">
+    <div class="product-overlay" onclick="showScreen('home')"></div>
+    <div class="product-sheet">
+      <div class="sheet-handle"></div>
+      <div class="product-image-wrap">
+        <img id="p-image" class="product-full-img" alt="">
+      </div>
+      <div class="product-details">
+        <div class="product-header-row">
+          <div>
+            <h1 class="p-title" id="p-title"></h1>
+            <div class="p-brand" id="p-brand"></div>
+          </div>
+          <button class="close-sheet" onclick="showScreen('home')">✕</button>
         </div>
-        <div class="profile-info">
-          <h2 id="profile-name">Гость</h2>
-          <div class="profile-status">
-            <span class="status-dot"></span>
-            <span id="profile-username">@username</span>
+        <div class="price-row">
+          <div class="price-value" id="p-price"></div>
+          <div class="stock-indicator">
+            <span class="stock-dot-green"></span>
+            <span id="stock-text">В наличии</span>
           </div>
         </div>
-      </div>
-
-      <!-- Статистика -->
-      <div class="profile-stats">
-        <div class="stat-card">
-          <div class="stat-label">Сумма заказов</div>
-          <div class="balance-amount" id="balance-amount">0₽</div>
-          <div class="balance-sub" id="balance-sub">оплачено 0 из 0</div>
+        <div class="sizes-section">
+          <div class="sizes-title">РАЗМЕР</div>
+          <div class="sizes" id="p-sizes"></div>
         </div>
-
-        <div class="stat-card">
-          <div class="stat-label">Заказов</div>
-          <div class="orders-count" id="orders-count">0</div>
-        </div>
+        <button class="btn-primary" id="btn-buy" onclick="goToPayment()" disabled>
+          ОФОРМИТЬ ЗАЯВКУ →
+        </button>
       </div>
-
-      <!-- Кнопка возврата -->
-      <button class="returns-btn" onclick="showScreen('returns')">
-        ↩️ Оформить возврат
-      </button>
-
-      <!-- Список заказов -->
-      <div class="orders-list" id="orders-list"></div>
-    </div>
-
-    <!-- Нижнее меню -->
-    <nav class="bottom-nav">
-      <button class="nav-btn" onclick="showScreen('home')">
-        <span>🏠 Главная</span>
-      </button>
-      <button class="nav-btn active" onclick="showScreen('profile')">
-        <span>👤 Профиль</span>
-      </button>
-    </nav>
-  </div>
-
-  <!-- КАРТОЧКА ТОВАРА -->
-  <div id="screen-product" class="screen">
-    <div class="product-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('home')">← Назад</button>
-      <span class="product-top-title">Детали товара</span>
-      <div class="logo-x-small"><span class="logo-letter-small">X</span></div>
-    </div>
-
-    <div class="product-image-wrap">
-      <div class="product-image-frame">
-        <img id="p-image" class="product-full-img" alt="">
-        <div class="p-badges" id="p-badges"></div>
-      </div>
-    </div>
-
-    <div class="product-details">
-      <div class="p-category" id="p-category"></div>
-      <h1 class="p-title" id="p-title"></h1>
-
-      <div class="price-block">
-        <div class="price-tag">
-          <span class="price-label">ЦЕНА</span>
-          <span class="price-value" id="p-price"></span>
-        </div>
-      </div>
-
-      <div class="sizes-section">
-        <div class="sizes-header">
-          <span class="sizes-title">РАЗМЕР</span>
-          <span class="sizes-hint" id="sizes-hint">Выбери размер</span>
-        </div>
-        <div class="sizes" id="p-sizes"></div>
-      </div>
-
-      <div class="stock-bar" id="p-stock"></div>
-
-      <button class="btn-primary" id="btn-buy" onclick="goToPayment()" disabled>
-        ОФОРМИТЬ ЗАЯВКУ →
-      </button>
     </div>
   </div>
 
-  <!-- ФОРМА ЗАЯВКИ -->
+  <!-- ========== ФОРМА ЗАЯВКИ ========== -->
   <div id="screen-payment2" class="screen">
-    <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('product')">← Назад</button>
-      <div class="step-info">
-        <div class="step-label">ЗАЯВКА</div>
-        <div class="step-title">Заполните данные</div>
+    <div class="form-screen">
+      <div class="form-header-bar">
+        <button class="back-btn" onclick="showScreen('product')">← Назад</button>
+        <div class="form-header-info">
+          <div class="form-step-label">ЗАЯВКА</div>
+          <div class="form-step-title">Заполните данные</div>
+        </div>
+        <div class="logo-x-small"><span class="logo-letter-small">X</span></div>
       </div>
-      <div class="logo-x-small"><span class="logo-letter-small">X</span></div>
-    </div>
+      <div class="form-scroll">
+        <div class="form-block">
+          <div class="form-header">
+            <h3>Данные заказа</h3>
+            <span class="required-badge">Обязательно</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Товар</label>
+            <input type="text" id="form-product" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ПВЗ доставки</label>
+            <input type="text" id="form-pvz" placeholder="Например: Яндекс, Почта России" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Размер</label>
+            <input type="text" id="form-size" class="form-input" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Трек-номер (если есть)</label>
+            <input type="text" id="form-track" placeholder="Оставьте пустым" class="form-input">
+          </div>
+        </div>
 
-    <div class="form-block">
-      <div class="form-header">
-        <h3>Данные заказа</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Товар</label>
-        <input type="text" id="form-product" placeholder="Например: Футболка ERD" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">ПВЗ доставки</label>
-        <input type="text" id="form-pvz" placeholder="Например: Яндекс, Почта России" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Размер</label>
-        <input type="text" id="form-size" placeholder="Например: M, L, XL" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Трек-номер (если есть)</label>
-        <input type="text" id="form-track" placeholder="Оставьте пустым" class="form-input">
-      </div>
-    </div>
+        <div class="upload-block">
+          <div class="upload-header">
+            <h3>🔲 QR-код для отправки</h3>
+            <span class="required-badge">Обязательно</span>
+          </div>
+          <label class="upload-zone">
+            <input type="file" id="file-qr" accept="image/*" onchange="handleFile(this, 'qr')">
+            <div class="upload-text">Нажмите чтобы загрузить QR-код</div>
+            <div class="upload-formats">JPG, PNG до 10 МБ</div>
+          </label>
+          <div id="preview-qr" style="display:none">
+            <img id="preview-img-qr" class="preview-img" alt="">
+          </div>
+        </div>
 
-    <div class="upload-block">
-      <div class="upload-header">
-        <h3>Фото товара</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
-      <label class="upload-zone">
-        <input type="file" id="file-product" accept="image/*" onchange="handleFile(this, 'product')">
-        <div class="upload-text">📷 Загрузить фото товара</div>
-        <div class="upload-formats">JPG, PNG до 10 МБ</div>
-      </label>
-      <div id="preview-product" style="display:none">
-        <img id="preview-img-product" class="preview-img" alt="">
-      </div>
-    </div>
+        <div class="info-note">
+          <span class="info-icon">ℹ️</span>
+          <span>После отправки менеджер свяжется с вами для уточнения оплаты</span>
+        </div>
 
-    <div class="upload-block">
-      <div class="upload-header">
-        <h3>QR-код для отправки</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
-      <label class="upload-zone">
-        <input type="file" id="file-qr" accept="image/*" onchange="handleFile(this, 'qr')">
-        <div class="upload-text">🔲 Загрузить QR-код</div>
-        <div class="upload-formats">JPG, PNG до 10 МБ</div>
-      </label>
-      <div id="preview-qr" style="display:none">
-        <img id="preview-img-qr" class="preview-img" alt="">
+        <button class="btn-primary" id="btn-finish" onclick="submitApplication()" disabled>
+          ОТПРАВИТЬ ЗАЯВКУ →
+        </button>
       </div>
     </div>
-
-    <div class="info-note">
-      ℹ️ После отправки заявки менеджер свяжется с вами для уточнения оплаты
-    </div>
-
-    <button class="btn-primary" id="btn-finish" onclick="submitApplication()" disabled>
-      ОТПРАВИТЬ ЗАЯВКУ →
-    </button>
   </div>
 
-  <!-- ЭКРАН УСПЕХА -->
+  <!-- ========== УСПЕХ ========== -->
   <div id="screen-success" class="screen">
     <div class="success-wrap">
-      <div class="success-logo"><span class="logo-letter-big">X</span></div>
       <div class="success-check">✓</div>
-      <h1 class="success-title">ЗАЯВКА ОТПРАВЛЕНА!</h1>
-
+      <h1 class="success-title">Заявка отправлена!</h1>
       <div class="success-order-details">
-        <div class="detail-row">
-          <span class="detail-label">Товар</span>
-          <span class="detail-value" id="success-product"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Размер</span>
-          <span class="detail-value" id="success-size"></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">ПВЗ</span>
-          <span class="detail-value" id="success-pvz"></span>
-        </div>
+        <div class="detail-row"><span class="detail-label">Товар</span><span class="detail-value" id="success-product"></span></div>
+        <div class="detail-row"><span class="detail-label">Размер</span><span class="detail-value" id="success-size"></span></div>
+        <div class="detail-row"><span class="detail-label">ПВЗ</span><span class="detail-value" id="success-pvz"></span></div>
       </div>
-
-      <p class="success-text">Менеджер свяжется с вами в течение 30 минут для уточнения оплаты.</p>
+      <p class="success-text">Менеджер свяжется с вами в течение 30 минут</p>
       <div class="success-order-id" id="success-order-id"></div>
       <button class="btn-primary" onclick="showScreen('profile')">МОИ ЗАКАЗЫ</button>
     </div>
   </div>
 
-  <!-- ЭКРАН ВОЗВРАТА -->
-  <div id="screen-returns" class="screen">
-    <div class="payment-top-bar">
-      <button class="back-btn-icon" onclick="showScreen('profile')">← Назад</button>
-      <div class="step-info">
-        <div class="step-label" style="color: #ff4d6d">ВОЗВРАТ</div>
-        <div class="step-title">Оформление возврата</div>
+  <!-- ========== ПРОФИЛЬ ========== -->
+  <div id="screen-profile" class="screen">
+    <div class="profile-container">
+      <div class="profile-header-card">
+        <div class="profile-avatar-gradient">
+          <span class="avatar-letter" id="avatar-letter">X</span>
+        </div>
+        <div class="profile-info">
+          <h2 class="profile-name" id="profile-name">Гость</h2>
+          <div class="profile-username" id="profile-username">@username</div>
+        </div>
+        <button class="close-profile" onclick="showScreen('home')">✕</button>
       </div>
-      <div class="logo-x-small" style="background: #ff4d6d"><span class="logo-letter-small">X</span></div>
-    </div>
 
-    <div class="form-block">
-      <div class="form-header">
-        <h3 style="color: #ff4d6d">Данные возврата</h3>
-        <span class="required-badge">Обязательно</span>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Номер заказа</label>
-        <input type="text" id="return-order-id" placeholder="BX-123456" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Товар</label>
-        <input type="text" id="return-product" placeholder="Футболка ERD белая" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Причина возврата</label>
-        <select id="return-reason" class="form-input">
-          <option value="">Выберите причину</option>
-          <option value="Не подошел размер">Не подошел размер</option>
-          <option value="Брак товара">Брак товара</option>
-          <option value="Не соответствует описанию">Не соответствует описанию</option>
-          <option value="Другое">Другое</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Адрес, куда прибыл товар</label>
-        <input type="text" id="return-address" placeholder="Город, улица, дом, квартира" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Код выдачи (если есть)</label>
-        <input type="text" id="return-pickup-code" placeholder="Код из СМС" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Телефон для связи</label>
-        <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
-      </div>
-    </div>
+      <div class="access-badge"><span>Доступ открыт</span></div>
 
-    <div class="upload-block">
-      <div class="upload-header">
-        <h3>Фото товара</h3>
-        <span class="required-badge">Обязательно</span>
+      <div class="profile-stats">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-ordered">0</div>
+          <div class="stat-label">Заказов</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-returns">0</div>
+          <div class="stat-label">Возвратов</div>
+        </div>
       </div>
-      <label class="upload-zone">
-        <input type="file" id="file-return-photo" accept="image/*" onchange="handleReturnFile(this, 'photo')">
-        <div class="upload-text">📷 Загрузить фото товара</div>
-        <div class="upload-formats">JPG, PNG до 10 МБ</div>
-      </label>
-      <div id="preview-return-photo" style="display:none">
-        <img id="preview-img-return-photo" class="preview-img" alt="">
-      </div>
-    </div>
 
-    <div class="upload-block">
-      <div class="upload-header">
-        <h3>QR-код для возврата</h3>
-        <span class="required-badge">Обязательно</span>
+      <!-- Мои заказы -->
+      <div class="profile-section">
+        <div class="section-header">
+          <div class="section-title-small">МОИ ЗАКАЗЫ</div>
+          <button class="view-all-btn" onclick="showAllOrders()">Все →</button>
+        </div>
+        <div class="orders-list" id="orders-list"></div>
       </div>
-      <label class="upload-zone">
-        <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this, 'qr')">
-        <div class="upload-text">🔲 Загрузить QR-код</div>
-        <div class="upload-formats">JPG, PNG до 10 МБ</div>
-      </label>
-      <div id="preview-return-qr" style="display:none">
-        <img id="preview-img-return-qr" class="preview-img" alt="">
+
+      <!-- Мои возвраты -->
+      <div class="profile-section">
+        <div class="section-header">
+          <div class="section-title-small">МОИ ВОЗВРАТЫ</div>
+          <button class="view-all-btn" onclick="showScreen('returns')">+ Новый</button>
+        </div>
+        <div class="orders-list" id="returns-list"></div>
+      </div>
+
+      <!-- Кнопки действий -->
+      <div class="action-buttons">
+        <button class="action-btn returns-btn" onclick="showScreen('returns')">
+          <span class="action-icon">↩️</span>
+          <div class="action-text">
+            <div class="action-title">Оформить возврат</div>
+            <div class="action-sub">Если товар не подошёл</div>
+          </div>
+        </button>
+
+        <a href="https://t.me/managerbrandx" class="action-btn support-btn">
+          <span class="action-icon">💬</span>
+          <div class="action-text">
+            <div class="action-title">Поддержка</div>
+            <div class="action-sub">@managerbrandx</div>
+          </div>
+        </a>
       </div>
     </div>
 
-    <div class="info-note" style="background: rgba(255, 77, 109, 0.1); border-color: rgba(255, 77, 109, 0.3)">
-      ℹ️ После отправки менеджер свяжется с вами для подтверждения возврата
-    </div>
-
-    <button class="btn-primary btn-return" id="btn-return" onclick="submitReturn()" disabled>
-      ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ →
-    </button>
+    <nav class="bottom-nav">
+      <button class="nav-btn" onclick="showScreen('home')">
+        <span class="nav-icon">🏠</span>
+        <span>Главная</span>
+      </button>
+      <button class="nav-btn active" onclick="showScreen('profile')">
+        <span class="nav-icon">👤</span>
+        <span>Профиль</span>
+      </button>
+    </nav>
   </div>
 
-  <!-- Подключаем наш JavaScript -->
+  <!-- ========== ВОЗВРАТ ========== -->
+  <div id="screen-returns" class="screen">
+    <div class="form-screen">
+      <div class="form-header-bar">
+        <button class="back-btn" onclick="showScreen('profile')">← Назад</button>
+        <div class="form-header-info">
+          <div class="form-step-label" style="color: #ff4d6d">ВОЗВРАТ</div>
+          <div class="form-step-title">Оформление возврата</div>
+        </div>
+        <div class="logo-x-small" style="background: #ff4d6d"><span class="logo-letter-small">X</span></div>
+      </div>
+      <div class="form-scroll">
+        <div class="form-block">
+          <div class="form-header">
+            <h3 style="color: #ff4d6d">Данные возврата</h3>
+            <span class="required-badge">Обязательно</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Выберите заказ для возврата</label>
+            <select id="return-order-select" class="form-input" onchange="fillReturnFromOrder()">
+              <option value="">— Выберите заказ —</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Причина возврата</label>
+            <select id="return-reason" class="form-input">
+              <option value="">Выберите причину</option>
+              <option value="Не подошел размер">Не подошел размер</option>
+              <option value="Брак товара">Брак товара</option>
+              <option value="Не соответствует описанию">Не соответствует описанию</option>
+              <option value="Другое">Другое</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Адрес возврата (ПВЗ)</label>
+            <input type="text" id="return-address" placeholder="Город, улица, дом" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Код выдачи (если есть)</label>
+            <input type="text" id="return-pickup-code" placeholder="Код из СМС" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Телефон для связи</label>
+            <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Комментарий (необязательно)</label>
+            <textarea id="return-comment" placeholder="Дополнительная информация" class="form-input" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="upload-block">
+          <div class="upload-header">
+            <h3>🔲 QR-код для возврата</h3>
+            <span class="required-badge">Обязательно</span>
+          </div>
+          <label class="upload-zone">
+            <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this, 'qr')">
+            <div class="upload-text">Нажмите чтобы загрузить QR</div>
+            <div class="upload-formats">JPG, PNG до 10 МБ</div>
+          </label>
+          <div id="preview-return-qr" style="display:none">
+            <img id="preview-img-return-qr" class="preview-img" alt="">
+          </div>
+        </div>
+
+        <div class="info-note" style="background: rgba(255, 77, 109, 0.1); border-color: rgba(255, 77, 109, 0.3)">
+          <span class="info-icon">ℹ️</span>
+          <span>Фото товара подтянется автоматически из вашего заказа</span>
+        </div>
+
+        <button class="btn-primary btn-return" id="btn-return" onclick="submitReturn()" disabled>
+          ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ →
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
 </body>
 </html>
