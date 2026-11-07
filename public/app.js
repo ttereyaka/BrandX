@@ -1,4 +1,3 @@
-// Telegram Web App
 var tg = window.Telegram.WebApp;
 tg.expand();
 
@@ -27,15 +26,8 @@ var SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 var SHEET_NAME = 'Лист10';
 var SERVER_URL = 'https://brandx-production-c65f.up.railway.app';
 
-// Проверяем хэш при загрузке
-if (window.location.hash === '#returns') {
-  // Ждём загрузки данных, потом откроем
-}
-
-// Загрузка товаров из Google Sheets
 function loadData() {
-  console.log('Загружаем данные из таблицы...');
-  
+  console.log('Загружаем данные...');
   var url = 'https://opensheet.elk.sh/' + SHEET_ID + '/' + encodeURIComponent(SHEET_NAME);
   
   fetch(url)
@@ -45,12 +37,9 @@ function loadData() {
     })
     .then(function(rawData) {
       console.log('Получено строк:', rawData.length);
-      
       products = [];
-      
       for (var i = 0; i < rawData.length; i++) {
         var row = rawData[i];
-        
         var sizes = {};
         if (row.s !== undefined && row.s !== '') sizes['S'] = Number(row.s) || 0;
         if (row.m !== undefined && row.m !== '') sizes['M'] = Number(row.m) || 0;
@@ -70,12 +59,11 @@ function loadData() {
           category: (row.category || 'other').toLowerCase().trim(),
           name: row.name || 'Без названия',
           price: Number(row.price) || 0,
-          image: row.image || 'https://via.placeholder.com/400x400?text=No+Image',
+          image: row.image || 'https://via.placeholder.com/400x400?text=BRAND+X',
           sizes: sizes,
           limited: isLimited
         });
       }
-      
       console.log('Товаров загружено:', products.length);
       renderCategories();
       renderProducts();
@@ -85,31 +73,22 @@ function loadData() {
     });
 }
 
-// Переключение экранов
 function showScreen(name) {
   var screens = document.querySelectorAll('.screen');
-  for (var i = 0; i < screens.length; i++) {
-    screens[i].classList.remove('active');
-  }
+  for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
   var target = document.getElementById('screen-' + name);
   if (target) target.classList.add('active');
 
   var navBtns = document.querySelectorAll('.nav-btn');
-  for (var i = 0; i < navBtns.length; i++) {
-    navBtns[i].classList.remove('active');
-  }
+  for (var i = 0; i < navBtns.length; i++) navBtns[i].classList.remove('active');
   var activeBtns = document.querySelectorAll('.nav-btn[onclick="showScreen(\'' + name + '\')"]');
-  for (var i = 0; i < activeBtns.length; i++) {
-    activeBtns[i].classList.add('active');
-  }
+  for (var i = 0; i < activeBtns.length; i++) activeBtns[i].classList.add('active');
 
   window.scrollTo(0, 0);
-
   if (name === 'profile') loadProfile();
   if (name === 'returns') loadReturnsDropdown();
 }
 
-// Загрузка профиля
 function loadProfile() {
   if (currentUser) {
     var fullName = currentUser.first_name || 'Гость';
@@ -121,12 +100,10 @@ function loadProfile() {
   loadUserData();
 }
 
-// Загрузка заказов и возвратов
 function loadUserData() {
   var headers = {};
   if (tg.initData) headers['X-Init-Data'] = tg.initData;
 
-  // Заказы
   fetch(SERVER_URL + '/api/orders', { headers: headers })
     .then(function(response) {
       if (!response.ok) throw new Error('Ошибка');
@@ -137,11 +114,8 @@ function loadUserData() {
       document.getElementById('stat-ordered').textContent = allUserOrders.length;
       renderOrders(allUserOrders);
     })
-    .catch(function(error) {
-      console.error('Ошибка заказов:', error);
-    });
+    .catch(function(error) { console.error('Ошибка заказов:', error); });
 
-  // Возвраты
   fetch(SERVER_URL + '/api/returns', { headers: headers })
     .then(function(response) {
       if (!response.ok) throw new Error('Ошибка');
@@ -152,12 +126,9 @@ function loadUserData() {
       document.getElementById('stat-returns').textContent = allUserReturns.length;
       renderReturns(allUserReturns);
     })
-    .catch(function(error) {
-      console.error('Ошибка возвратов:', error);
-    });
+    .catch(function(error) { console.error('Ошибка возвратов:', error); });
 }
 
-// Отрисовка заказов
 function renderOrders(orders) {
   var list = document.getElementById('orders-list');
   if (!list) return;
@@ -170,14 +141,16 @@ function renderOrders(orders) {
   var html = '';
   for (var i = 0; i < orders.length; i++) {
     var o = orders[i];
-    var statusClass = 'status-' + o.status.toLowerCase().replace(/\s+/g, '');
+    var showStatus = o.status && o.status !== 'В обработке';
+    var statusClass = showStatus ? 'status-' + o.status.toLowerCase().replace(/\s+/g, '') : '';
+    
     html += '<div class="order-card">';
     html += '<div class="order-header">';
     html += '<span class="order-id">#' + o.orderId + '</span>';
-    html += '<span class="order-status ' + statusClass + '">' + o.status + '</span>';
+    if (showStatus) html += '<span class="order-status ' + statusClass + '">' + o.status + '</span>';
     html += '</div>';
     html += '<div class="order-body">';
-    if (o.image) html += '<img src="' + o.image + '" class="order-img">';
+    if (o.image) html += '<img src="' + o.image + '" class="order-img" onerror="this.style.display=\'none\'">';
     else html += '<div class="order-img"></div>';
     html += '<div class="order-info">';
     html += '<div class="order-title">' + o.product + '</div>';
@@ -190,7 +163,6 @@ function renderOrders(orders) {
   list.innerHTML = html;
 }
 
-// Отрисовка возвратов
 function renderReturns(returns) {
   var list = document.getElementById('returns-list');
   if (!list) return;
@@ -219,7 +191,6 @@ function renderReturns(returns) {
   list.innerHTML = html;
 }
 
-// Категории
 function renderCategories() {
   var tabs = document.getElementById('category-tabs');
   var html = '';
@@ -253,6 +224,8 @@ function getFilteredProducts() {
 function renderProducts() {
   var filtered = getFilteredProducts();
   var grid = document.getElementById('product-grid');
+  var count = document.getElementById('catalog-count');
+  count.textContent = filtered.length + ' items';
 
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="empty-state"><p>Товары не найдены</p></div>';
@@ -266,22 +239,21 @@ function renderProducts() {
     var sizeKeys = Object.keys(p.sizes);
     for (var j = 0; j < sizeKeys.length; j++) totalStock += p.sizes[sizeKeys[j]];
 
-    var num = String(i + 1).padStart(2, '0');
-    var stockText = sizeKeys.length > 1 ? sizeKeys.length + ' размера' : '1 размер';
+    var sizesCount = sizeKeys.length;
+    var sizesText = sizesCount + ' ' + (sizesCount === 1 ? 'размер' : sizesCount < 5 ? 'размера' : 'размеров');
 
     html += '<div class="prod-card" onclick="openProduct(' + p.id + ')">';
     html += '<div class="prod-img-wrap">';
-    html += '<div class="prod-number">' + num + '</div>';
-    html += '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy">';
+    html += '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/400x400?text=BRAND+X\'; this.onerror=null;">';
     html += '<div class="prod-badges">';
-    html += '<span class="badge badge-stock">' + stockText + '</span>';
-    if (p.limited) html += '<span class="badge badge-hit">ХИТ</span>';
+    if (totalStock > 0) html += '<span class="badge badge-sizes">' + sizesText + '</span>';
     html += '</div>';
     html += '</div>';
     html += '<div class="prod-info">';
     html += '<div class="prod-name">' + p.name + '</div>';
     html += '<div class="prod-price">' + p.price.toLocaleString() + ' ₽</div>';
     if (totalStock > 0) html += '<div class="prod-stock"><span class="dot"></span>В наличии</div>';
+    else html += '<div class="prod-stock" style="color: #ff4d6d;"><span class="dot" style="background: #ff4d6d;"></span>Нет в наличии</div>';
     html += '</div></div>';
   }
   grid.innerHTML = html;
@@ -289,7 +261,6 @@ function renderProducts() {
 
 function filterProducts() { renderProducts(); }
 
-// Открытие карточки товара
 function openProduct(id) {
   currentProduct = null;
   for (var i = 0; i < products.length; i++) {
@@ -334,7 +305,6 @@ function openProduct(id) {
     }
   }
   sizesEl.innerHTML = sizesHtml;
-
   document.getElementById('btn-buy').disabled = true;
   showScreen('product');
 }
@@ -354,7 +324,6 @@ function goToPayment() {
   showScreen('payment2');
 }
 
-// Загрузка QR-кода
 function handleFile(input, type) {
   var file = input.files[0];
   if (!file) return;
@@ -375,7 +344,6 @@ function checkFormValid() {
   btn.disabled = !(pvz && uploadedFiles.qr);
 }
 
-// Отправка заявки
 function submitApplication() {
   var product = document.getElementById('form-product').value.trim();
   var pvz = document.getElementById('form-pvz').value.trim();
@@ -426,7 +394,6 @@ function submitApplication() {
     });
 }
 
-// === ВОЗВРАТЫ ===
 function loadReturnsDropdown() {
   var select = document.getElementById('return-order-select');
   select.innerHTML = '<option value="">— Выберите заказ —</option>';
@@ -453,7 +420,6 @@ function fillReturnFromOrder() {
   var select = document.getElementById('return-order-select');
   var selected = select.options[select.selectedIndex];
   if (!selected || !selected.value) return;
-
   document.getElementById('return-address').value = selected.dataset.pvz || '';
   checkReturnFormValid();
 }
@@ -505,14 +471,9 @@ function submitReturn() {
   var returnId = 'RET-' + Date.now().toString().slice(-6);
 
   var returnData = {
-    returnId: returnId,
-    orderId: orderId,
-    product: order.product,
-    image: order.image || '',
-    reason: reason,
-    address: address,
-    pickupCode: pickupCode || 'Нет',
-    phone: phone,
+    returnId: returnId, orderId: orderId, product: order.product,
+    image: order.image || '', reason: reason, address: address,
+    pickupCode: pickupCode || 'Нет', phone: phone,
     userId: currentUser ? currentUser.id : null,
     username: currentUser ? currentUser.username : null,
     firstName: currentUser ? currentUser.first_name : null
@@ -548,7 +509,6 @@ function submitReturn() {
     });
 }
 
-// Обработчики событий
 document.addEventListener('DOMContentLoaded', function() {
   var formFields = ['form-pvz', 'form-track'];
   for (var i = 0; i < formFields.length; i++) {
@@ -565,5 +525,4 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Запускаем загрузку данных
 loadData();
