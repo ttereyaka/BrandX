@@ -602,4 +602,5 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-if (platform !== 'vk') loadData();
+// Загружаем данные в любом случае
+loadData();
