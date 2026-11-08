@@ -2,26 +2,17 @@ var tg = window.Telegram.WebApp;
 tg.expand();
 
 var currentUser = tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
-
 var products = [];
 var categories = [
-  { id: 'all', name: 'Все' },
-  { id: 'jackets', name: 'Верхняя одежда' },
-  { id: 'hoodies', name: 'Худи' },
-  { id: 'tshirts', name: 'Футболки' },
-  { id: 'shirts', name: 'Рубашки' },
-  { id: 'shorts', name: 'Шорты' },
+  { id: 'all', name: 'Все' }, { id: 'jackets', name: 'Верхняя одежда' },
+  { id: 'hoodies', name: 'Худи' }, { id: 'tshirts', name: 'Футболки' },
+  { id: 'shirts', name: 'Рубашки' }, { id: 'shorts', name: 'Шорты' },
   { id: 'accessories', name: 'Аксессуары' }
 ];
 
-var currentProduct = null;
-var selectedSize = null;
-var uploadedFiles = { qr: null };
-var returnFiles = { qr: null };
-var activeCategory = 'all';
-var allUserOrders = [];
-var allUserReturns = [];
-
+var currentProduct = null, selectedSize = null;
+var uploadedFiles = { qr: null }, returnFiles = { qr: null };
+var activeCategory = 'all', allUserOrders = [], allUserReturns = [];
 var SHEET_ID = '108ikNY2z7iMQj2PE9AC_3ege2g1_-9naUpscKnjGONs';
 var SHEET_NAME = 'Лист10';
 var SERVER_URL = 'https://brandx-production-c65f.up.railway.app';
@@ -132,15 +123,12 @@ function loadUserData() {
 function renderOrders(orders) {
   var list = document.getElementById('orders-list');
   if (!list) return;
-
-  if (orders.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>Заказов пока нет</p></div>';
-    return;
-  }
+  if (orders.length === 0) { list.innerHTML = '<div class="empty-state"><p>Заказов пока нет</p></div>'; return; }
 
   var html = '';
   for (var i = 0; i < orders.length; i++) {
     var o = orders[i];
+    // Скрываем статус "В обработке"
     var showStatus = o.status && o.status !== 'В обработке';
     var statusClass = showStatus ? 'status-' + o.status.toLowerCase().replace(/\s+/g, '') : '';
     
@@ -166,11 +154,7 @@ function renderOrders(orders) {
 function renderReturns(returns) {
   var list = document.getElementById('returns-list');
   if (!list) return;
-
-  if (returns.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>Возвратов пока нет</p></div>';
-    return;
-  }
+  if (returns.length === 0) { list.innerHTML = '<div class="empty-state"><p>Возвратов пока нет</p></div>'; return; }
 
   var html = '';
   for (var i = 0; i < returns.length; i++) {
@@ -202,11 +186,7 @@ function renderCategories() {
   tabs.innerHTML = html;
 }
 
-function filterCategory(catId) {
-  activeCategory = catId;
-  renderCategories();
-  renderProducts();
-}
+function filterCategory(catId) { activeCategory = catId; renderCategories(); renderProducts(); }
 
 function getFilteredProducts() {
   var searchInput = document.getElementById('search-input');
@@ -227,10 +207,7 @@ function renderProducts() {
   var count = document.getElementById('catalog-count');
   count.textContent = filtered.length + ' items';
 
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><p>Товары не найдены</p></div>';
-    return;
-  }
+  if (filtered.length === 0) { grid.innerHTML = '<div class="empty-state"><p>Товары не найдены</p></div>'; return; }
 
   var html = '';
   for (var i = 0; i < filtered.length; i++) {
@@ -244,11 +221,11 @@ function renderProducts() {
 
     html += '<div class="prod-card" onclick="openProduct(' + p.id + ')">';
     html += '<div class="prod-img-wrap">';
+    // Добавлена защита от битой ссылки на фото
     html += '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/400x400?text=BRAND+X\'; this.onerror=null;">';
     html += '<div class="prod-badges">';
     if (totalStock > 0) html += '<span class="badge badge-sizes">' + sizesText + '</span>';
-    html += '</div>';
-    html += '</div>';
+    html += '</div></div>';
     html += '<div class="prod-info">';
     html += '<div class="prod-name">' + p.name + '</div>';
     html += '<div class="prod-price">' + p.price.toLocaleString() + ' ₽</div>';
@@ -350,16 +327,13 @@ function submitApplication() {
   var size = document.getElementById('form-size').value.trim();
   var track = document.getElementById('form-track').value.trim();
 
-  if (!product || !pvz || !size || !uploadedFiles.qr) {
-    alert('Заполните ПВЗ и загрузите QR-код'); return;
-  }
+  if (!product || !pvz || !size || !uploadedFiles.qr) { alert('Заполните ПВЗ и загрузите QR-код'); return; }
 
   var btn = document.getElementById('btn-finish');
   btn.disabled = true;
   btn.innerHTML = 'ОТПРАВКА...';
 
   var orderId = 'BX-' + Date.now().toString().slice(-6);
-
   var orderData = {
     orderId: orderId, product: product, pvz: pvz, size: size,
     track: track || 'Не указан',
@@ -397,12 +371,10 @@ function submitApplication() {
 function loadReturnsDropdown() {
   var select = document.getElementById('return-order-select');
   select.innerHTML = '<option value="">— Выберите заказ —</option>';
-
   if (allUserOrders.length === 0) {
     select.innerHTML += '<option value="" disabled>У вас нет заказов</option>';
     return;
   }
-
   for (var i = 0; i < allUserOrders.length; i++) {
     var o = allUserOrders[i];
     var option = document.createElement('option');
@@ -454,9 +426,7 @@ function submitReturn() {
   var pickupCode = document.getElementById('return-pickup-code').value.trim();
   var phone = document.getElementById('return-phone').value.trim();
 
-  if (!orderId || !reason || !address || !phone || !returnFiles.qr) {
-    alert('Заполните все обязательные поля и загрузите QR'); return;
-  }
+  if (!orderId || !reason || !address || !phone || !returnFiles.qr) { alert('Заполните все обязательные поля и загрузите QR'); return; }
 
   var order = null;
   for (var i = 0; i < allUserOrders.length; i++) {
@@ -469,7 +439,6 @@ function submitReturn() {
   btn.innerHTML = 'ОТПРАВКА...';
 
   var returnId = 'RET-' + Date.now().toString().slice(-6);
-
   var returnData = {
     returnId: returnId, orderId: orderId, product: order.product,
     image: order.image || '', reason: reason, address: address,
