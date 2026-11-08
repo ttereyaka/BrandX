@@ -10,7 +10,6 @@
 </head>
 <body>
 
-  <!-- ГЛАВНАЯ -->
   <div id="screen-home" class="screen active">
     <header class="main-header">
       <div class="header-top">
@@ -21,10 +20,7 @@
             <span class="brand-tag">STREETWEAR • RESALE</span>
           </div>
         </div>
-        <div class="live-badge">
-          <span class="live-dot"></span>
-          <span>LIVE</span>
-        </div>
+        <div class="live-badge"><span class="live-dot"></span><span>LIVE</span></div>
       </div>
 
       <div class="hero-banner">
@@ -56,37 +52,24 @@
     </div>
 
     <nav class="bottom-nav">
-      <button class="nav-btn active" onclick="showScreen('home')">
-        <span class="nav-icon">🏠</span><span>Главная</span>
-      </button>
-      <button class="nav-btn" onclick="showScreen('profile')">
-        <span class="nav-icon">👤</span><span>Профиль</span>
-      </button>
+      <button class="nav-btn active" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span>Главная</span></button>
+      <button class="nav-btn" onclick="showScreen('profile')"><span class="nav-icon">👤</span><span>Профиль</span></button>
     </nav>
   </div>
 
-  <!-- КАРТОЧКА ТОВАРА -->
   <div id="screen-product" class="screen">
     <div class="product-overlay" onclick="showScreen('home')"></div>
     <div class="product-sheet">
       <div class="sheet-handle"></div>
-      <div class="product-image-wrap">
-        <img id="p-image" class="product-full-img" alt="">
-      </div>
+      <div class="product-image-wrap"><img id="p-image" class="product-full-img" alt=""></div>
       <div class="product-details">
         <div class="product-header-row">
-          <div>
-            <h1 class="p-title" id="p-title"></h1>
-            <div class="p-brand" id="p-brand"></div>
-          </div>
+          <div><h1 class="p-title" id="p-title"></h1><div class="p-brand" id="p-brand"></div></div>
           <button class="close-sheet" onclick="showScreen('home')">✕</button>
         </div>
         <div class="price-row">
           <div class="price-value" id="p-price"></div>
-          <div class="stock-indicator">
-            <span class="stock-dot-green"></span>
-            <span id="stock-text">В наличии</span>
-          </div>
+          <div class="stock-indicator"><span class="stock-dot-green"></span><span id="stock-text">В наличии</span></div>
         </div>
         <div class="sizes-section">
           <div class="sizes-title">РАЗМЕР</div>
@@ -97,7 +80,6 @@
     </div>
   </div>
 
-  <!-- ФОРМА ЗАЯВКИ -->
   <div id="screen-payment2" class="screen">
     <div class="form-screen">
       <div class="form-header-bar">
@@ -110,54 +92,29 @@
       </div>
       <div class="form-scroll">
         <div class="form-block">
-          <div class="form-header">
-            <h3>Данные заказа</h3>
-            <span class="required-badge">Обязательно</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Товар</label>
-            <input type="text" id="form-product" class="form-input" readonly>
-          </div>
-          <div class="form-group">
-            <label class="form-label">ПВЗ доставки</label>
-            <input type="text" id="form-pvz" placeholder="Например: Яндекс, Почта России" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Размер</label>
-            <input type="text" id="form-size" class="form-input" readonly>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Трек-номер (если есть)</label>
-            <input type="text" id="form-track" placeholder="Оставьте пустым" class="form-input">
-          </div>
+          <div class="form-header"><h3>Данные заказа</h3><span class="required-badge">Обязательно</span></div>
+          <div class="form-group"><label class="form-label">Товар</label><input type="text" id="form-product" class="form-input" readonly></div>
+          <div class="form-group"><label class="form-label">ПВЗ доставки</label><input type="text" id="form-pvz" placeholder="Например: Яндекс, Почта России" class="form-input"></div>
+          <div class="form-group"><label class="form-label">Размер</label><input type="text" id="form-size" class="form-input" readonly></div>
+          <div class="form-group"><label class="form-label">Трек-номер (если есть)</label><input type="text" id="form-track" placeholder="Оставьте пустым" class="form-input"></div>
         </div>
 
         <div class="upload-block">
-          <div class="upload-header">
-            <h3>🔲 QR-код для отправки</h3>
-            <span class="required-badge">Обязательно</span>
-          </div>
+          <div class="upload-header"><h3>🔲 QR-код для отправки</h3><span class="required-badge">Обязательно</span></div>
           <label class="upload-zone">
             <input type="file" id="file-qr" accept="image/*" onchange="handleFile(this, 'qr')">
             <div class="upload-text">Нажмите чтобы загрузить QR-код</div>
             <div class="upload-formats">JPG, PNG до 10 МБ</div>
           </label>
-          <div id="preview-qr" style="display:none">
-            <img id="preview-img-qr" class="preview-img" alt="">
-          </div>
+          <div id="preview-qr" style="display:none"><img id="preview-img-qr" class="preview-img" alt=""></div>
         </div>
 
-        <div class="info-note">
-          <span class="info-icon">ℹ️</span>
-          <span>После отправки менеджер свяжется с вами для уточнения оплаты</span>
-        </div>
-
+        <div class="info-note"><span class="info-icon">ℹ️</span><span>После отправки менеджер свяжется с вами для уточнения оплаты</span></div>
         <button class="btn-primary" id="btn-finish" onclick="submitApplication()" disabled>ОТПРАВИТЬ ЗАЯВКУ →</button>
       </div>
     </div>
   </div>
 
-  <!-- УСПЕХ -->
   <div id="screen-success" class="screen">
     <div class="success-wrap">
       <div class="success-check">✓</div>
@@ -173,13 +130,10 @@
     </div>
   </div>
 
-  <!-- ПРОФИЛЬ -->
   <div id="screen-profile" class="screen">
     <div class="profile-container">
       <div class="profile-header-card">
-        <div class="profile-avatar-gradient">
-          <span class="avatar-letter" id="avatar-letter">X</span>
-        </div>
+        <div class="profile-avatar-gradient"><span class="avatar-letter" id="avatar-letter">X</span></div>
         <div class="profile-info">
           <h2 class="profile-name" id="profile-name">Гость</h2>
           <div class="profile-username" id="profile-username">@username</div>
@@ -190,20 +144,12 @@
       <div class="access-badge"><span>Доступ открыт</span></div>
 
       <div class="profile-stats">
-        <div class="stat-card">
-          <div class="stat-value" id="stat-ordered">0</div>
-          <div class="stat-label">Заказов</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-returns">0</div>
-          <div class="stat-label">Возвратов</div>
-        </div>
+        <div class="stat-card"><div class="stat-value" id="stat-ordered">0</div><div class="stat-label">Заказов</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-returns">0</div><div class="stat-label">Возвратов</div></div>
       </div>
 
       <div class="profile-section">
-        <div class="section-header">
-          <div class="section-title-small">МОИ ЗАКАЗЫ</div>
-        </div>
+        <div class="section-header"><div class="section-title-small">МОИ ЗАКАЗЫ</div></div>
         <div class="orders-list" id="orders-list"></div>
       </div>
 
@@ -218,32 +164,21 @@
       <div class="action-buttons">
         <button class="action-btn returns-btn" onclick="showScreen('returns')">
           <span class="action-icon">↩️</span>
-          <div class="action-text">
-            <div class="action-title">Оформить возврат</div>
-            <div class="action-sub">Если товар не подошёл</div>
-          </div>
+          <div class="action-text"><div class="action-title">Оформить возврат</div><div class="action-sub">Если товар не подошёл</div></div>
         </button>
         <a href="https://t.me/managerbrandx" class="action-btn support-btn">
           <span class="action-icon">💬</span>
-          <div class="action-text">
-            <div class="action-title">Поддержка</div>
-            <div class="action-sub">@managerbrandx</div>
-          </div>
+          <div class="action-text"><div class="action-title">Поддержка</div><div class="action-sub">@managerbrandx</div></div>
         </a>
       </div>
     </div>
 
     <nav class="bottom-nav">
-      <button class="nav-btn" onclick="showScreen('home')">
-        <span class="nav-icon">🏠</span><span>Главная</span>
-      </button>
-      <button class="nav-btn active" onclick="showScreen('profile')">
-        <span class="nav-icon">👤</span><span>Профиль</span>
-      </button>
+      <button class="nav-btn" onclick="showScreen('home')"><span class="nav-icon">🏠</span><span>Главная</span></button>
+      <button class="nav-btn active" onclick="showScreen('profile')"><span class="nav-icon">👤</span><span>Профиль</span></button>
     </nav>
   </div>
 
-  <!-- ВОЗВРАТ -->
   <div id="screen-returns" class="screen">
     <div class="form-screen">
       <div class="form-header-bar">
@@ -256,10 +191,7 @@
       </div>
       <div class="form-scroll">
         <div class="form-block">
-          <div class="form-header">
-            <h3 style="color: #ff4d6d">Данные возврата</h3>
-            <span class="required-badge">Обязательно</span>
-          </div>
+          <div class="form-header"><h3 style="color: #ff4d6d">Данные возврата</h3><span class="required-badge">Обязательно</span></div>
           <div class="form-group">
             <label class="form-label">Выберите заказ для возврата</label>
             <select id="return-order-select" class="form-input" onchange="fillReturnFromOrder()">
@@ -276,38 +208,23 @@
               <option value="Другое">Другое</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Адрес возврата (ПВЗ)</label>
-            <input type="text" id="return-address" placeholder="Город, улица, дом" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Код выдачи (если есть)</label>
-            <input type="text" id="return-pickup-code" placeholder="Код из СМС" class="form-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Телефон для связи</label>
-            <input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input">
-          </div>
+          <div class="form-group"><label class="form-label">Адрес возврата (ПВЗ)</label><input type="text" id="return-address" placeholder="Город, улица, дом" class="form-input"></div>
+          <div class="form-group"><label class="form-label">Код выдачи (если есть)</label><input type="text" id="return-pickup-code" placeholder="Код из СМС" class="form-input"></div>
+          <div class="form-group"><label class="form-label">Телефон для связи</label><input type="tel" id="return-phone" placeholder="+7 (999) 123-45-67" class="form-input"></div>
         </div>
 
         <div class="upload-block">
-          <div class="upload-header">
-            <h3>🔲 QR-код для возврата</h3>
-            <span class="required-badge">Обязательно</span>
-          </div>
+          <div class="upload-header"><h3>🔲 QR-код для возврата</h3><span class="required-badge">Обязательно</span></div>
           <label class="upload-zone">
             <input type="file" id="file-return-qr" accept="image/*" onchange="handleReturnFile(this, 'qr')">
             <div class="upload-text">Нажмите чтобы загрузить QR</div>
             <div class="upload-formats">JPG, PNG до 10 МБ</div>
           </label>
-          <div id="preview-return-qr" style="display:none">
-            <img id="preview-img-return-qr" class="preview-img" alt="">
-          </div>
+          <div id="preview-return-qr" style="display:none"><img id="preview-img-return-qr" class="preview-img" alt=""></div>
         </div>
 
         <div class="info-note" style="background: rgba(255, 77, 109, 0.1); border-color: rgba(255, 77, 109, 0.3)">
-          <span class="info-icon">ℹ️</span>
-          <span>Фото товара подтянется автоматически из вашего заказа</span>
+          <span class="info-icon">ℹ️</span><span>Фото товара подтянется автоматически из вашего заказа</span>
         </div>
 
         <button class="btn-primary btn-return" id="btn-return" onclick="submitReturn()" disabled>ОТПРАВИТЬ ЗАЯВКУ НА ВОЗВРАТ →</button>
