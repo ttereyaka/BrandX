@@ -75,16 +75,6 @@ function verifyTelegramInitData(initData) {
   } catch (e) { return null; }
 }
 
-function requireAdmin(req, res, next) {
-  const initData = req.get('X-Init-Data');
-  const user = verifyTelegramInitData(initData);
-  if (!user || String(user.id) !== String(ADMIN_ID)) {
-    return res.status(403).json({ error: 'Доступ запрещён' });
-  }
-  req.adminUser = user;
-  next();
-}
-
 const cleanup = files => files.filter(Boolean).forEach(f => fs.unlink(f, () => {}));
 
 function getUserFromRequest(req) {
@@ -98,6 +88,7 @@ function getUserFromRequest(req) {
   return null;
 }
 
+// === ОТПРАВКА ЗАКАЗА В TELEGRAM (с фото товара и QR) ===
 app.post('/api/order', upload.single('qrCode'), async (req, res) => {
   const qrCode = req.file?.path;
   try {
@@ -124,15 +115,18 @@ app.post('/api/order', upload.single('qrCode'), async (req, res) => {
       `🆔 <b>Трек:</b> ${esc(order.track || 'Не указан')}\n\n` +
       `👤 <b>Клиент:</b> @${esc(order.username || 'неизвестно')}\n` +
       `📱 <b>Имя:</b> ${esc(order.firstName || '—')}\n` +
-      `🆔 <b>ID:</b> ${esc(order.userId || '—')}\n\n` +
-      `Статус: /status ${esc(order.orderId)} paid`;
+      `🆔 <b>ID:</b> ${esc(order.userId || '—')}`;
 
+    // 1. Сначала отправляем фото товара из таблицы
     if (order.image) {
       try {
-        await bot.telegram.sendPhoto(ADMIN_ID, order.image, { caption: `📦 Фото товара для #${esc(order.orderId)}` });
-      } catch (e) { console.log('Не удалось отправить фото:', e.message); }
+        await bot.telegram.sendPhoto(ADMIN_ID, order.image, { 
+          caption: `📸 Фото товара для заявки #${esc(order.orderId)}` 
+        });
+      } catch (e) { console.log('Не удалось отправить фото товара:', e.message); }
     }
     
+    // 2. Затем отправляем QR-код клиента с полной информацией
     if (qrCode) {
       await bot.telegram.sendPhoto(ADMIN_ID, { source: qrCode }, { caption: caption, parse_mode: 'HTML' });
     } else {
@@ -236,58 +230,6 @@ app.post('/api/return', upload.single('qrCode'), async (req, res) => {
   }
 });
 
-// === АДМИНКА (скрытая) ===
-app.get('/api/admin/stats', requireAdmin, (req, res) => {
-  const orders = loadOrders();
-  const returns = loadReturns();
-  res.json({ stats: {
-    totalOrders: orders.length,
-    pendingOrders: orders.filter(o => o.status === 'pending').length,
-    paidOrders: orders.filter(o => o.status === 'paid').length,
-    shippedOrders: orders.filter(o => o.status === 'shipped').length,
-    deliveredOrders: orders.filter(o => o.status === 'delivered').length,
-    totalReturns: returns.length,
-    pendingReturns: returns.filter(r => r.status === 'pending').length,
-    totalRevenue: orders.filter(o => o.status === 'paid' || o.status === 'shipped' || o.status === 'delivered').reduce((sum, o) => sum + (Number(o.price) || 0), 0)
-  }});
-});
-
-app.get('/api/admin/orders', requireAdmin, (req, res) => {
-  res.json({ orders: loadOrders().reverse() });
-});
-
-app.get('/api/admin/returns', requireAdmin, (req, res) => {
-  res.json({ returns: loadReturns().reverse() });
-});
-
-app.post('/api/admin/order-status', requireAdmin, (req, res) => {
-  const { orderId, status } = req.body;
-  if (!orderId || !STATUS[status]) return res.status(400).json({ error: 'Неверные данные' });
-  const orders = loadOrders();
-  const order = orders.find(o => o.orderId === orderId);
-  if (!order) return res.status(404).json({ error: 'Заказ не найден' });
-  order.status = status;
-  saveOrders(orders);
-  if (order.userId && order.platform === 'telegram') {
-    try { bot.telegram.sendMessage(order.userId, `📦 Заказ <b>#${esc(order.orderId)}</b>: ${STATUS[status]}`, { parse_mode: 'HTML' }); } catch (e) {}
-  }
-  res.json({ success: true });
-});
-
-app.post('/api/admin/order-track', requireAdmin, (req, res) => {
-  const { orderId, track } = req.body;
-  if (!orderId || !track) return res.status(400).json({ error: 'Неверные данные' });
-  const orders = loadOrders();
-  const order = orders.find(o => o.orderId === orderId);
-  if (!order) return res.status(404).json({ error: 'Заказ не найден' });
-  order.track = track;
-  saveOrders(orders);
-  if (order.userId && order.platform === 'telegram') {
-    try { bot.telegram.sendMessage(order.userId, `🚚 Заказ <b>#${esc(order.orderId)}</b>: трек-номер <code>${esc(track)}</code>`, { parse_mode: 'HTML' }); } catch (e) {}
-  }
-  res.json({ success: true });
-});
-
 // === КОМАНДЫ БОТА ===
 const isAdmin = ctx => String(ctx.from?.id) === String(ADMIN_ID);
 
@@ -319,11 +261,6 @@ bot.command('track', async ctx => {
     try { await bot.telegram.sendMessage(o.userId, `🚚 Заказ <b>#${esc(o.orderId)}</b>: трек-номер <code>${esc(track)}</code>`, { parse_mode: 'HTML' }); } catch (e) {}
   }
   ctx.reply(`✅ Трек для #${id} сохранён`);
-});
-
-bot.command('admin', ctx => {
-  if (!isAdmin(ctx)) return;
-  ctx.reply(`🔐 Админ-панель:\n${WEB_APP_URL}/x-admin-panel-2026-secret.html`, { parse_mode: 'HTML' });
 });
 
 const orderLine = o => `${o.status === 'paid' ? '✅' : o.status === 'shipped' ? '🚚' : '⏳'} #${esc(o.orderId)} — ${esc(o.product)} (${esc(o.size)}) — ${STATUS[o.status] || o.status}`;
